@@ -1,0 +1,764 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="format-detection" content="telephone=no">
+<meta name="theme-color" content="#EDF0F3" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#10151B" media="(prefers-color-scheme: dark)">
+<title>Formel-Werkstatt</title>
+<link rel="stylesheet" href="fonts/fonts.css">
+<style>
+/* Layout: eine schmale Arbeitsspalte wie ein Prüfungsbogen — Geg. / Ges. / Lös., darunter der Taschenrechner */
+:root{
+  --bg:#EDF0F3; --panel:#FFFFFF; --ink:#16202B; --muted:#596677; --line:#D2D8DF; --soft:#F4F6F8;
+  --accent:#F2B705; --accent-ink:#16202B;
+  --action:#14576B; --action-ink:#FFFFFF;
+  --ok:#1D7646; --ok-bg:#E2F2E8; --bad:#AF2A20; --bad-bg:#FBE8E5;
+  --f-display:"Barlow Condensed","Arial Narrow",Arial,sans-serif;
+  --f-body:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#10151B; --panel:#18202A; --ink:#E5EAF0; --muted:#98A4B2; --line:#2A3541; --soft:#1E2833;
+  --accent:#E9B31C; --accent-ink:#10151B; --action:#5AAAC0; --action-ink:#0C1419;
+  --ok:#62C78F; --ok-bg:#15301F; --bad:#F1897E; --bad-bg:#3A1C19; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#10151B; --panel:#18202A; --ink:#E5EAF0; --muted:#98A4B2; --line:#2A3541; --soft:#1E2833;
+  --accent:#E9B31C; --accent-ink:#10151B; --action:#5AAAC0; --action-ink:#0C1419;
+  --ok:#62C78F; --ok-bg:#15301F; --bad:#F1897E; --bad-bg:#3A1C19; color-scheme:dark}
+
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%;color-scheme:light}
+body{margin:0;-webkit-tap-highlight-color:transparent}
+[hidden]{display:none!important}
+img{max-width:100%}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.55}
+.wrap{max-width:780px;margin:0 auto;padding-inline:max(16px,env(safe-area-inset-left));padding-block:calc(14px + env(safe-area-inset-top)) calc(40px + env(safe-area-inset-bottom));display:flex;flex-direction:column;gap:18px}
+h1,h2,h3{font-family:var(--f-display);font-weight:700;letter-spacing:.01em;text-wrap:balance;margin:0;line-height:1.05}
+button{font:inherit;color:inherit;cursor:pointer}
+button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible,summary:focus-visible,label:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+
+.top{display:flex;align-items:center;gap:12px}
+.mark{width:44px;height:44px;flex:none;border-radius:6px;background:var(--accent);color:var(--accent-ink);display:grid;place-items:center;font-family:var(--f-mono);font-weight:500;font-size:20px}
+.top h1{font-size:32px;text-transform:uppercase}
+.top p{margin:0;color:var(--muted);font-size:13px}
+.stripe{height:6px;border-radius:3px;background:repeating-linear-gradient(-45deg,var(--accent) 0 10px,var(--ink) 10px 20px);opacity:.9}
+
+.modes{display:grid;grid-template-columns:repeat(4,1fr);gap:4px;background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:4px}
+@media (max-width:560px){.modes{grid-template-columns:repeat(2,1fr)}}
+.modes button{min-width:0;border:0;background:transparent;border-radius:5px;padding:9px 6px;font-family:var(--f-display);font-size:17px;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:var(--muted)}
+.modes button[aria-selected="true"]{background:var(--ink);color:var(--bg)}
+
+.setup{display:flex;flex-direction:column;gap:12px}
+.grp{display:flex;flex-direction:column;gap:6px}
+.lbl,.grp-label{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.09em;color:var(--muted)}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{border:1px solid var(--line);background:var(--panel);border-radius:999px;padding:5px 12px;font-size:13.5px;color:var(--muted)}
+.chip[aria-pressed="true"]{border-color:var(--ink);color:var(--ink);background:var(--soft);font-weight:600}
+.chip[aria-pressed="true"]::before{content:"✓ "}
+.setrow{display:flex;flex-wrap:wrap;align-items:center;gap:10px}
+.setrow label{font-size:13.5px;color:var(--muted)}
+select,.field,textarea{font:inherit;padding:7px 9px;border:1px solid var(--line);border-radius:6px;background:var(--panel);color:var(--ink);min-width:0}
+textarea{width:100%;resize:vertical;font-size:14px}
+.btn{display:inline-block;border:0;border-radius:6px;padding:10px 18px;background:var(--action);color:var(--action-ink);font-weight:600;text-align:center}
+.btn.ghost{background:transparent;color:var(--ink);border:1px solid var(--line)}
+.btn.small{padding:6px 12px;font-size:13.5px}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.linkbtn{border:0;background:none;padding:0;color:var(--action);font-size:13.5px;text-decoration:underline;text-underline-offset:3px}
+
+.card{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:22px;display:flex;flex-direction:column;gap:16px}
+.qhead{display:flex;justify-content:space-between;align-items:baseline;gap:12px;flex-wrap:wrap}
+.count{font-family:var(--f-display);font-size:30px;font-weight:700;text-transform:uppercase;font-variant-numeric:tabular-nums}
+.count small{font-size:20px;color:var(--muted);font-weight:500}
+.tag{font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;background:var(--accent);color:var(--accent-ink);padding:3px 9px;border-radius:4px;max-width:100%;overflow-wrap:anywhere}
+.bar{display:grid;grid-template-columns:repeat(var(--n),1fr);gap:3px}
+.cell{height:7px;border-radius:2px;background:var(--line)}
+.cell.ok{background:var(--ok)} .cell.bad{background:var(--bad)} .cell.now{background:var(--accent)}
+.situ{margin:0;font-size:16px;max-width:65ch}
+.sheet{display:grid;grid-template-columns:auto minmax(0,1fr);gap:8px 16px;margin:0;padding:14px 16px;background:var(--soft);border-radius:8px}
+.sheet dt{font-family:var(--f-display);font-size:19px;font-weight:700;text-transform:uppercase}
+.sheet dd{margin:0;min-width:0}
+.sheet ul{list-style:none;margin:0;padding:0;display:flex;flex-wrap:wrap;gap:6px 18px}
+.sheet li{font-family:var(--f-mono);font-size:14px;font-variant-numeric:tabular-nums}
+.inrow{display:flex;gap:8px;flex-wrap:wrap;align-items:stretch}
+.inbox{display:flex;flex:1 1 220px;min-width:0;border:2px solid var(--ink);border-radius:7px;overflow:hidden;background:var(--panel)}
+.inbox input{flex:1;min-width:0;border:0;background:transparent;color:var(--ink);font-family:var(--f-mono);font-size:20px;padding:10px 12px}
+.inbox input:focus-visible{outline:none}
+.inbox:focus-within{outline:3px solid var(--accent);outline-offset:2px}
+.unit{display:grid;place-items:center;padding:0 14px;background:var(--soft);border-left:1px solid var(--line);font-family:var(--f-mono);font-size:15px;color:var(--muted);white-space:nowrap}
+.hint{margin:0;font-size:13px;color:var(--muted)}
+.tools{display:flex;gap:10px 18px;flex-wrap:wrap;align-items:center}
+.peek{font-family:var(--f-mono);font-size:15px;padding:10px 14px;border:1px dashed var(--line);border-radius:6px;overflow-wrap:anywhere}
+.src{font-size:12.5px;color:var(--muted)}
+
+/* Anleitung */
+.guide{display:flex;flex-direction:column;gap:8px;border:1px solid var(--line);border-radius:8px;padding:14px 16px}
+.gstep{display:grid;grid-template-columns:28px minmax(0,1fr);gap:4px 10px}
+.gnum{width:24px;height:24px;border-radius:50%;background:var(--ink);color:var(--bg);display:grid;place-items:center;font-family:var(--f-display);font-weight:700;font-size:14px}
+.gtxt{font-size:14.5px}
+.gcalc{grid-column:2;font-family:var(--f-mono);font-size:14px;overflow-wrap:anywhere;background:var(--soft);padding:6px 10px;border-radius:5px}
+
+.fb{border-radius:8px;padding:16px;display:flex;flex-direction:column;gap:12px}
+.fb.ok{background:var(--ok-bg)} .fb.bad{background:var(--bad-bg)}
+.verdict{font-family:var(--f-display);font-size:24px;font-weight:700;text-transform:uppercase}
+.fb.ok .verdict{color:var(--ok)} .fb.bad .verdict{color:var(--bad)}
+.formel{font-family:var(--f-mono);font-size:16px;overflow-wrap:anywhere}
+.fb .gcalc{background:var(--panel)}
+
+.opts{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+@media (max-width:560px){.opts{grid-template-columns:1fr}}
+.opt{text-align:left;border:1px solid var(--line);background:var(--panel);border-radius:8px;padding:14px;font-size:15px;display:flex;gap:10px;align-items:flex-start;min-width:0;overflow-wrap:anywhere}
+.opt.fm{font-family:var(--f-mono)}
+.opt .k{font-family:var(--f-display);font-weight:700;font-size:17px;color:var(--muted)}
+.opt:hover:not(:disabled){border-color:var(--ink)}
+.opt.right{border-color:var(--ok);background:var(--ok-bg)} .opt.wrong{border-color:var(--bad);background:var(--bad-bg)}
+.opt:disabled{cursor:default}
+.mcq{font-size:18px;font-weight:500;margin:0;max-width:60ch}
+
+/* Taschenrechner */
+.calc{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px 18px}
+.calc summary{font-family:var(--f-display);font-size:20px;font-weight:700;text-transform:uppercase;cursor:pointer}
+.calc-body{display:flex;flex-direction:column;gap:10px;margin-top:12px}
+.cdisp{display:flex;flex-direction:column;gap:2px;border:2px solid var(--ink);border-radius:7px;padding:8px 12px;background:var(--soft)}
+.cdisp input{border:0;background:transparent;color:var(--ink);font-family:var(--f-mono);font-size:18px;padding:0;width:100%}
+.cdisp input:focus-visible{outline:none}
+.cdisp:focus-within{outline:3px solid var(--accent);outline-offset:2px}
+.cdisp output{font-family:var(--f-mono);font-size:22px;text-align:right;min-height:1.4em;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+.cdisp output.err{font-size:13px;color:var(--bad)}
+.keys{display:grid;grid-template-columns:repeat(6,1fr);gap:5px}
+.key{border:1px solid var(--line);background:var(--soft);border-radius:6px;padding:9px 0;font-family:var(--f-mono);font-size:16px;min-width:0}
+.key.op{background:var(--panel)}
+.key.eq{background:var(--action);color:var(--action-ink);border-color:var(--action)}
+.key:active{transform:translateY(1px)}
+.hist{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:2px}
+.hist button{width:100%;text-align:left;border:0;background:none;padding:3px 0;font-family:var(--f-mono);font-size:13px;color:var(--muted);overflow-wrap:anywhere}
+.hist button:hover{color:var(--ink)}
+
+/* Unterlagen */
+.mat{display:flex;flex-direction:column;gap:14px;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:20px}
+.mat h2{font-size:26px;text-transform:uppercase}
+.mat p{margin:0;max-width:65ch}
+.drop{border:2px dashed var(--line);border-radius:8px;padding:18px;display:flex;flex-wrap:wrap;align-items:center;gap:12px}
+.drop.over{border-color:var(--action);background:var(--soft)}
+.paste{display:flex;flex-direction:column;gap:8px}
+.paste summary{cursor:pointer;font-weight:600;font-size:14px}
+.srcs{list-style:none;margin:0;padding:0;display:flex;flex-direction:column}
+.srcs li{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--line);font-size:14px}
+.srcs .nm{flex:1;min-width:0;overflow-wrap:anywhere;font-weight:500}
+.srcs .meta{color:var(--muted);font-family:var(--f-mono);font-size:12.5px;white-space:nowrap}
+.srcs img{width:36px;height:36px;object-fit:cover;border-radius:4px;border:1px solid var(--line)}
+.kind{font-size:10.5px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;border:1px solid var(--line);border-radius:3px;padding:1px 5px;color:var(--muted)}
+.genrow{display:grid;grid-template-columns:auto auto minmax(0,1fr);gap:10px;align-items:end}
+.genrow > div{display:flex;flex-direction:column;gap:4px;min-width:0}
+@media (max-width:560px){.genrow{grid-template-columns:1fr 1fr}.genrow > div:last-child{grid-column:1 / -1}}
+.status{font-size:14px;padding:10px 12px;border-radius:6px;background:var(--soft)}
+.status.err{background:var(--bad-bg);color:var(--bad)}
+.howto{margin:0;padding-left:20px;display:flex;flex-direction:column;gap:6px;max-width:62ch}
+
+.score{font-family:var(--f-display);font-size:64px;font-weight:700;line-height:1;font-variant-numeric:tabular-nums}
+.score small{font-size:28px;color:var(--muted)}
+.misses{display:flex;flex-direction:column;gap:8px;margin:0;padding:0;list-style:none}
+.misses li{border-left:3px solid var(--bad);padding:6px 12px;background:var(--soft);border-radius:0 6px 6px 0;font-size:14px;overflow-wrap:anywhere}
+.misses .ans{font-family:var(--f-mono)}
+.stat{display:grid;grid-template-columns:minmax(0,1fr) 110px 76px;gap:10px;align-items:center;font-size:14px}
+.track{height:8px;background:var(--line);border-radius:4px;overflow:hidden}
+.fill{height:100%;background:var(--action)}
+.num{font-family:var(--f-mono);text-align:right;font-variant-numeric:tabular-nums;color:var(--muted);font-size:13px}
+
+.ref{display:flex;flex-direction:column;gap:22px}
+.ref h2{font-size:24px;text-transform:uppercase;border-bottom:2px solid var(--ink);padding-bottom:4px}
+.ref-item{display:grid;grid-template-columns:minmax(0,200px) minmax(0,1fr);gap:4px 18px;padding:12px 0;border-bottom:1px solid var(--line)}
+.ref-item .nm{font-weight:600}
+.ref-item .fm{font-family:var(--f-mono);font-size:15.5px}
+.ref-item .lg{grid-column:2;font-size:13px;color:var(--muted)}
+@media (max-width:560px){.ref-item{grid-template-columns:1fr}.ref-item .lg{grid-column:1}.card,.mat{padding:16px}}
+.search{font:inherit;width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:6px;background:var(--panel);color:var(--ink)}
+@media (prefers-reduced-motion:no-preference){.fb,.gstep{animation:in .18s ease-out}@keyframes in{from{transform:translateY(4px)}to{transform:none}}}
+</style>
+
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div class="mark" aria-hidden="true">ƒx</div>
+    <div><h1>Formel-Werkstatt</h1><p>Rechentraining für die Meisterschule · Kfz-Technik &amp; Kaufmännisch</p></div>
+  </header>
+  <div class="stripe" aria-hidden="true"></div>
+
+  <nav class="modes" role="tablist" aria-label="Modus">
+    <button role="tab" data-mode="calc" aria-selected="true" id="tab-calc">Rechnen</button>
+    <button role="tab" data-mode="mc" aria-selected="false" id="tab-mc">Formel-Quiz</button>
+    <button role="tab" data-mode="mat" aria-selected="false" id="tab-mat">Meine Unterlagen</button>
+    <button role="tab" data-mode="ref" aria-selected="false" id="tab-ref">Formelsammlung</button>
+  </nav>
+
+  <section class="setup" id="setup"></section>
+  <main id="stage" aria-live="polite"></main>
+  <div id="calcSlot"></div>
+</div>
+
+<script>
+/* ---------- Helfer ---------- */
+const $=s=>document.querySelector(s);
+function rnd(a,b,st=1){const n=Math.floor((b-a)/st+1e-9)+1;return +(a+st*Math.floor(Math.random()*n)).toFixed(6)}
+function pick(a){return a[Math.floor(Math.random()*a.length)]}
+function shuffle(a){a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
+function f(x,d=2){return x.toLocaleString('de-DE',{minimumFractionDigits:0,maximumFractionDigits:d})}
+function fx(x,d){return x.toLocaleString('de-DE',{minimumFractionDigits:d,maximumFractionDigits:d})}
+const eur=x=>fx(x,2)+' €';
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+function parseNum(s){s=String(s).trim().replace(/[\s€%]/g,'');if(!s)return NaN;
+  if(s.includes(','))s=s.replace(/\./g,'').replace(',','.');else if((s.match(/\./g)||[]).length>1)s=s.replace(/\./g,'');return Number(s)}
+const store={get(k,d){try{const v=localStorage.getItem(k);return v?JSON.parse(v):d}catch(e){return d}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v));return true}catch(e){return false}}};
+
+/* Rechenausdruck auswerten: + − · ÷ ^ ² ³ √ π ( ), Komma oder Punkt als Dezimalzeichen */
+function evalExpr(src){
+  const s=String(src??'').replace(/×|·|\*/g,'*').replace(/÷|:/g,'/').replace(/−|–/g,'-').replace(/\bpi\b/gi,'π').replace(/sqrt/gi,'√').replace(/\s+/g,'');
+  if(!s)return NaN;let i=0;
+  const num=()=>{const m=/^\d+(?:[.,]\d+)?/.exec(s.slice(i));if(!m)throw 0;i+=m[0].length;return parseFloat(m[0].replace(',','.'))};
+  const primary=()=>{const c=s[i];
+    if(c==='('){i++;const v=expr();if(s[i]!==')')throw 0;i++;return v}
+    if(c==='π'){i++;return Math.PI}
+    if(c==='√'){i++;return Math.sqrt(postfix())}
+    if(/\d/.test(c||''))return num();throw 0};
+  const postfix=()=>{let v=primary();for(;;){if(s[i]==='²'){i++;v=v*v}else if(s[i]==='³'){i++;v=v**3}else if(s[i]==='%'){i++;v/=100}else break}return v};
+  const power=()=>{const b=postfix();if(s[i]==='^'){i++;return b**unary()}return b};
+  const unary=()=>{if(s[i]==='-'){i++;return -unary()}if(s[i]==='+'){i++;return unary()}return power()};
+  const term=()=>{let v=unary();for(;;){const c=s[i];
+    if(c==='*'||c==='/'){i++;const r=unary();v=c==='*'?v*r:v/r}
+    else if(c==='('||c==='π'||c==='√'||(/\d/.test(c||'')&&/[)π²³]/.test(s[i-1]||'')))v*=unary();else break}return v};
+  function expr(){let v=term();while(s[i]==='+'||s[i]==='-'){const o=s[i++];const r=term();v=o==='+'?v+r:v-r}return v}
+  try{const v=expr();return i===s.length&&isFinite(v)?v:NaN}catch(e){return NaN}
+}
+
+/* ---------- Themen & Formeln ---------- */
+const CATS={motor:{name:'Motor',grp:'kfz'},elektrik:{name:'Elektrik',grp:'kfz'},antrieb:{name:'Fahrwerk & Antrieb',grp:'kfz'},hydraulik:{name:'Hydraulik & Mechanik',grp:'kfz'},prozent:{name:'Prozent & Zinsen',grp:'kfm'},kalk:{name:'Kalkulation & Kosten',grp:'kfm'}};
+const GRPS={kfz:'Kfz-Technik',kfm:'Kaufmännisch'};
+const catName=k=>k==='mat'?'Eigene Unterlagen':CATS[k]?.name||k;
+
+const F=[
+ {id:'hubraum',cat:'motor',name:'Hubraum',frage:'Wie berechnest du den Hubraum eines Zylinders?',formel:'V<sub>h</sub> = π/4 · d² · s',legende:'d Bohrung, s Hub (beides in cm → cm³). Gesamthubraum V<sub>H</sub> = V<sub>h</sub> · z'},
+ {id:'verdichtung',cat:'motor',name:'Verdichtungsverhältnis',frage:'Wie berechnest du das Verdichtungsverhältnis?',formel:'ε = (V<sub>h</sub> + V<sub>c</sub>) / V<sub>c</sub>',legende:'V<sub>h</sub> Hubraum eines Zylinders, V<sub>c</sub> Verdichtungsraum'},
+ {id:'leistung',cat:'motor',name:'Motorleistung',frage:'Welche Formel verbindet Leistung, Drehmoment und Drehzahl?',formel:'P = M · n / 9550',legende:'P in kW, M in Nm, n in 1/min'},
+ {id:'kolben',cat:'motor',name:'Mittlere Kolbengeschwindigkeit',frage:'Wie berechnest du die mittlere Kolbengeschwindigkeit?',formel:'v<sub>m</sub> = s · n / 30',legende:'s Hub in m, n in 1/min, v<sub>m</sub> in m/s'},
+ {id:'verbrauch',cat:'motor',name:'Kraftstoffverbrauch',frage:'Wie berechnest du den Verbrauch in l/100 km?',formel:'K = V · 100 / s',legende:'V getankte Menge in l, s gefahrene Strecke in km'},
+ {id:'ohm',cat:'elektrik',name:'Ohmsches Gesetz',frage:'Wie lautet das ohmsche Gesetz?',formel:'U = R · I',legende:'U in V, R in Ω, I in A'},
+ {id:'el_leistung',cat:'elektrik',name:'Elektrische Leistung',frage:'Wie berechnest du die elektrische Leistung?',formel:'P = U · I',legende:'P in W, U in V, I in A'},
+ {id:'reihe',cat:'elektrik',name:'Reihenschaltung',frage:'Wie berechnest du den Gesamtwiderstand in Reihe?',formel:'R<sub>ges</sub> = R₁ + R₂ + …',legende:'Strom überall gleich, Spannungen addieren sich'},
+ {id:'parallel',cat:'elektrik',name:'Parallelschaltung (2 Widerstände)',frage:'Wie berechnest du zwei parallel geschaltete Widerstände?',formel:'R<sub>ges</sub> = R₁ · R₂ / (R₁ + R₂)',legende:'Allgemein: 1/R<sub>ges</sub> = 1/R₁ + 1/R₂ + …'},
+ {id:'kapazitaet',cat:'elektrik',name:'Ladungsmenge / Kapazität',frage:'Wie hängen Ladung, Strom und Zeit zusammen?',formel:'Q = I · t',legende:'Q in Ah, I in A, t in h'},
+ {id:'reifen',cat:'antrieb',name:'Reifendurchmesser',frage:'Wie berechnest du den Außendurchmesser eines Reifens aus der Reifengröße?',formel:'d = D · 25,4 + 2 · B · (H/B) / 100',legende:'D Felgendurchmesser in Zoll, B Reifenbreite in mm, H/B Querschnittsverhältnis in %'},
+ {id:'umfang',cat:'antrieb',name:'Abrollumfang (theoretisch)',frage:'Wie berechnest du den theoretischen Abrollumfang eines Rades?',formel:'U = π · d',legende:'d Reifenaußendurchmesser'},
+ {id:'uebersetzung',cat:'antrieb',name:'Übersetzung',frage:'Wie berechnest du die Übersetzung eines Zahnradpaars?',formel:'i = z₂ / z₁ = n₁ / n₂',legende:'z₁ treibendes, z₂ getriebenes Rad'},
+ {id:'fahrgeschw',cat:'antrieb',name:'Fahrgeschwindigkeit',frage:'Wie berechnest du die Fahrgeschwindigkeit aus Motordrehzahl und Gesamtübersetzung?',formel:'v = (n / i<sub>ges</sub>) · U · 60 / 1000',legende:'v in km/h, n in 1/min, U Abrollumfang in m'},
+ {id:'druck',cat:'hydraulik',name:'Druck',frage:'Wie berechnest du einen Druck aus Kraft und Fläche?',formel:'p = F / A',legende:'1 bar = 10 N/cm²; A = π/4 · d²'},
+ {id:'hydraulik',cat:'hydraulik',name:'Hydraulische Kraftübersetzung',frage:'Wie berechnest du die Kraft am Arbeitskolben einer hydraulischen Anlage?',formel:'F₂ = F₁ · A₂ / A₁',legende:'gleicher Druck im System; A₂/A₁ = (d₂/d₁)²'},
+ {id:'wirkungsgrad',cat:'hydraulik',name:'Wirkungsgrad',frage:'Wie berechnest du den Wirkungsgrad?',formel:'η = P<sub>ab</sub> / P<sub>zu</sub>',legende:'meist in % angegeben (· 100)'},
+ {id:'prozentwert',cat:'prozent',name:'Prozentwert',frage:'Wie berechnest du den Prozentwert?',formel:'W = G · p / 100',legende:'G Grundwert, p Prozentsatz'},
+ {id:'prozentsatz',cat:'prozent',name:'Prozentsatz',frage:'Wie berechnest du den Prozentsatz?',formel:'p = W · 100 / G',legende:'W Prozentwert, G Grundwert'},
+ {id:'zinsen',cat:'prozent',name:'Tageszinsen (kaufmännisch)',frage:'Wie berechnest du Zinsen für eine Anzahl von Tagen?',formel:'Z = K · p · t / (100 · 360)',legende:'K Kapital, p Zinssatz p. a., t Tage (Jahr = 360 Tage)'},
+ {id:'skonto',cat:'prozent',name:'Skonto',frage:'Wie berechnest du den Zahlbetrag nach Skontoabzug?',formel:'Zahlbetrag = R · (1 − s / 100)',legende:'R Rechnungsbetrag, s Skontosatz in %'},
+ {id:'mwst',cat:'prozent',name:'Umsatzsteuer',frage:'Wie kommst du vom Netto- zum Bruttopreis (19 %)?',formel:'Brutto = Netto · 1,19',legende:'umgekehrt: Netto = Brutto / 1,19'},
+ {id:'stundensatz',cat:'kalk',name:'Stundenverrechnungssatz',frage:'Wie berechnest du einen einfachen Stundenverrechnungssatz?',formel:'VS = L · (1 + GK/100) · (1 + G/100)',legende:'L Stundenlohn, GK Gemeinkostenzuschlag %, G Gewinnzuschlag %'},
+ {id:'breakeven',cat:'kalk',name:'Gewinnschwelle',frage:'Wie berechnest du die Break-even-Menge?',formel:'x = K<sub>f</sub> / (p − k<sub>v</sub>)',legende:'K<sub>f</sub> Fixkosten, p Stückpreis, k<sub>v</sub> variable Stückkosten (p − k<sub>v</sub> = Deckungsbeitrag)'},
+ {id:'afa',cat:'kalk',name:'Lineare Abschreibung',frage:'Wie berechnest du die jährliche lineare Abschreibung?',formel:'AfA = AK / ND',legende:'AK Anschaffungskosten, ND Nutzungsdauer in Jahren'},
+ {id:'bezugspreis',cat:'kalk',name:'Bezugskalkulation',frage:'Wie kommst du vom Listeneinkaufspreis zum Bezugspreis?',formel:'LEP − Rabatt = ZEP − Skonto = BEP + Bezugskosten = BP',legende:'Rabatt vom LEP, Skonto vom Zieleinkaufspreis'}
+];
+const FBY=Object.fromEntries(F.map(x=>[x.id,x]));
+
+/* ---------- Aufgabengeneratoren: steps = [Anleitung, Rechnung] ---------- */
+const GENS=[
+ {cat:'motor',gen(){const d=rnd(72,92,0.5),s=rnd(70,96,0.5),z=pick([3,4,4,6]);const vh=Math.PI/4*(d/10)**2*(s/10),VH=vh*z;
+  return{fid:'hubraum',text:`Ein ${z}-Zylinder-Ottomotor soll für das Datenblatt nachgerechnet werden.`,geg:[`d = ${f(d,1)} mm`,`s = ${f(s,1)} mm`,`z = ${z}`],ges:'Gesamthubraum V<sub>H</sub>',unit:'cm³',ans:VH,dec:0,
+  steps:[['Rechne Bohrung und Hub von mm in cm um (÷ 10), damit das Ergebnis in cm³ herauskommt.',`d = ${f(d/10,2)} cm; s = ${f(s/10,2)} cm`],
+   ['Setze in die Hubraumformel für einen Zylinder ein: V<sub>h</sub> = π/4 · d² · s.',`V<sub>h</sub> = π/4 · ${f(d/10,2)}² · ${f(s/10,2)} = ${fx(vh,1)} cm³`],
+   ['Multipliziere mit der Zylinderzahl z.',`V<sub>H</sub> = ${fx(vh,1)} · ${z} = ${fx(VH,0)} cm³`]]}}},
+ {cat:'motor',gen(){const vh=rnd(400,620,5),vc=rnd(36,62,0.5);const e=(vh+vc)/vc;
+  return{fid:'verdichtung',text:'Nach dem Auslitern des Brennraums liegen folgende Werte für einen Zylinder vor.',geg:[`V<sub>h</sub> = ${f(vh)} cm³`,`V<sub>c</sub> = ${f(vc,1)} cm³`],ges:'Verdichtungsverhältnis ε',unit:': 1',ans:e,dec:1,
+  steps:[['Addiere Hubraum und Verdichtungsraum. Das ist der Raum über dem Kolben im unteren Totpunkt.',`V<sub>h</sub> + V<sub>c</sub> = ${f(vh)} + ${f(vc,1)} = ${f(vh+vc,1)} cm³`],
+   ['Teile diese Summe durch den Verdichtungsraum.',`ε = ${f(vh+vc,1)} / ${f(vc,1)} = ${fx(e,1)} : 1`]]}}},
+ {cat:'motor',gen(){if(Math.random()<.5){const M=rnd(180,420,5),n=rnd(1800,5200,100);const P=M*n/9550;
+   return{fid:'leistung',text:'Auf dem Leistungsprüfstand wird bei einer bestimmten Drehzahl das Drehmoment abgelesen.',geg:[`M = ${f(M)} Nm`,`n = ${f(n)} 1/min`],ges:'Leistung P',unit:'kW',ans:P,dec:1,
+   steps:[['Prüfe die Einheiten: M in Nm und n in 1/min passen direkt zur Zahlenwertgleichung P = M · n / 9550.','P = M · n / 9550'],
+    ['Multipliziere Drehmoment und Drehzahl.',`${f(M)} · ${f(n)} = ${f(M*n)}`],
+    ['Teile durch 9550. Das Ergebnis ist in kW.',`P = ${f(M*n)} / 9550 = ${fx(P,1)} kW`]]}}
+  const P=rnd(55,190,1),n=rnd(3000,6200,100);const M=P*9550/n;
+  return{fid:'leistung',text:'Im Fahrzeugschein steht die Nennleistung bei Nenndrehzahl. Gesucht ist das Drehmoment an diesem Punkt.',geg:[`P = ${f(P)} kW`,`n = ${f(n)} 1/min`],ges:'Drehmoment M',unit:'Nm',ans:M,dec:0,
+  steps:[['Stelle P = M · n / 9550 nach M um: mit 9550 malnehmen, durch n teilen.','M = P · 9550 / n'],
+   ['Setze die Werte ein und rechne.',`M = ${f(P)} · 9550 / ${f(n)} = ${fx(M,0)} Nm`]]}}},
+ {cat:'motor',gen(){const s=rnd(72,96,0.5),n=rnd(3500,6800,100);const v=(s/1000)*n/30;
+  return{fid:'kolben',text:'Prüfe die mittlere Kolbengeschwindigkeit bei Nenndrehzahl.',geg:[`s = ${f(s,1)} mm`,`n = ${f(n)} 1/min`],ges:'mittlere Kolbengeschwindigkeit v<sub>m</sub>',unit:'m/s',ans:v,dec:2,
+  steps:[['Rechne den Hub in Meter um (÷ 1000).',`s = ${f(s/1000,4)} m`],
+   ['Setze in v<sub>m</sub> = s · n / 30 ein. Die 30 kommt aus 2 Hüben pro Umdrehung und 60 s pro Minute.',`v<sub>m</sub> = ${f(s/1000,4)} · ${f(n)} / 30 = ${fx(v,2)} m/s`]]}}},
+ {cat:'motor',gen(){const V=rnd(32,58,0.1),s=rnd(420,920,1);const K=V*100/s;
+  return{fid:'verbrauch',text:'Ein Kunde hat vollgetankt und den Tageskilometerzähler zurückgesetzt. Beim nächsten Volltanken liegen folgende Werte vor.',geg:[`V = ${f(V,1)} l`,`s = ${f(s)} km`],ges:'Durchschnittsverbrauch K',unit:'l/100 km',ans:K,dec:1,
+  steps:[['Teile die getankte Menge durch die Strecke. Das ist der Verbrauch pro Kilometer.',`${f(V,1)} / ${f(s)} = ${f(V/s,5)} l/km`],
+   ['Multipliziere mit 100 für den Verbrauch auf 100 km.',`K = ${f(V/s,5)} · 100 = ${fx(K,1)} l/100 km`]]}}},
+ {cat:'elektrik',gen(){const v=Math.random();
+  if(v<.34){const P=pick([5,10,21,35,55,60,65]),U=pick([12,24]);const I=P/U;
+   return{fid:'el_leistung',text:`Ein Verbraucher im ${U}-V-Bordnetz hat die angegebene Nennleistung.`,geg:[`P = ${P} W`,`U = ${U} V`],ges:'Stromaufnahme I',unit:'A',ans:I,dec:2,
+   steps:[['Stelle P = U · I nach I um: beide Seiten durch U teilen.','I = P / U'],['Setze Leistung und Spannung ein.',`I = ${P} / ${U} = ${fx(I,2)} A`]]}}
+  if(v<.67){const R=rnd(0.6,12,0.1),U=pick([12,12,24]);const I=U/R;
+   return{fid:'ohm',text:'An einem Heizwiderstand liegt die volle Bordnetzspannung an.',geg:[`U = ${U} V`,`R = ${f(R,1)} Ω`],ges:'Strom I',unit:'A',ans:I,dec:2,
+   steps:[['Stelle U = R · I nach I um: durch R teilen.','I = U / R'],['Setze Spannung und Widerstand ein.',`I = ${U} / ${f(R,1)} = ${fx(I,2)} A`]]}}
+  const I=rnd(5,40,1),R=rnd(0.005,0.05,0.001);const dU=R*I;
+  return{fid:'ohm',text:'Durch eine Versorgungsleitung fließt Strom. Berechne den Spannungsfall auf der Leitung.',geg:[`I = ${I} A`,`R<sub>Ltg</sub> = ${f(R,3)} Ω`],ges:'Spannungsfall ΔU',unit:'V',ans:dU,dec:2,
+  steps:[['Der Spannungsfall ist die Spannung, die an der Leitung selbst abfällt: ohmsches Gesetz mit dem Leitungswiderstand.','ΔU = R<sub>Ltg</sub> · I'],['Setze ein.',`ΔU = ${f(R,3)} · ${I} = ${fx(dU,2)} V`]]}}},
+ {cat:'elektrik',gen(){const R1=rnd(2,24,0.5),R2=rnd(2,24,0.5);
+  if(Math.random()<.5){const R=R1+R2;return{fid:'reihe',text:'Zwei Widerstände sind in Reihe geschaltet.',geg:[`R₁ = ${f(R1,1)} Ω`,`R₂ = ${f(R2,1)} Ω`],ges:'Gesamtwiderstand R<sub>ges</sub>',unit:'Ω',ans:R,dec:2,
+   steps:[['In Reihe werden Widerstände einfach addiert.',`R<sub>ges</sub> = ${f(R1,1)} + ${f(R2,1)} = ${fx(R,2)} Ω`]]}}
+  const R=R1*R2/(R1+R2);return{fid:'parallel',text:'Zwei Widerstände sind parallel geschaltet.',geg:[`R₁ = ${f(R1,1)} Ω`,`R₂ = ${f(R2,1)} Ω`],ges:'Gesamtwiderstand R<sub>ges</sub>',unit:'Ω',ans:R,dec:2,
+  steps:[['Bei zwei parallelen Widerständen gilt „Produkt durch Summe“. Rechne zuerst das Produkt.',`R₁ · R₂ = ${f(R1,1)} · ${f(R2,1)} = ${f(R1*R2,2)}`],
+   ['Rechne die Summe.',`R₁ + R₂ = ${f(R1+R2,1)}`],
+   ['Teile Produkt durch Summe. Kontrolle: Das Ergebnis muss kleiner sein als der kleinste Einzelwiderstand.',`R<sub>ges</sub> = ${f(R1*R2,2)} / ${f(R1+R2,1)} = ${fx(R,2)} Ω`]]}}},
+ {cat:'elektrik',gen(){if(Math.random()<.5){const C=pick([44,60,70,74,80,95]),I=rnd(0.5,6,0.5);const t=0.5*C/I;
+   return{fid:'kapazitaet',text:'Bei abgestelltem Motor bleibt ein Verbraucher eingeschaltet. Wie lange dauert es, bis die Batterie zur Hälfte entladen ist?',geg:[`Kapazität = ${C} Ah`,`I = ${f(I,1)} A`,'Entladung bis 50 %'],ges:'Zeit t',unit:'h',ans:t,dec:1,
+   steps:[['Berechne die nutzbare Ladung: nur die Hälfte der Kapazität.',`Q = 0,5 · ${C} = ${f(0.5*C,1)} Ah`],['Stelle Q = I · t nach t um.','t = Q / I'],['Setze ein.',`t = ${f(0.5*C,1)} / ${f(I,1)} = ${fx(t,1)} h`]]}}
+  const mA=rnd(20,90,5),d=rnd(7,28,1);const Q=mA/1000*d*24;
+  return{fid:'kapazitaet',text:'Ein Fahrzeug steht mit erhöhtem Ruhestrom auf dem Hof. Wie viel Ladung wird in der Standzeit entnommen?',geg:[`I<sub>Ruhe</sub> = ${mA} mA`,`Standzeit = ${d} Tage`],ges:'entnommene Ladung Q',unit:'Ah',ans:Q,dec:1,
+  steps:[['Rechne den Strom in Ampere um (÷ 1000).',`I = ${f(mA/1000,3)} A`],['Rechne die Standzeit in Stunden um (· 24).',`t = ${d} · 24 = ${d*24} h`],['Multipliziere Strom und Zeit.',`Q = ${f(mA/1000,3)} · ${d*24} = ${fx(Q,1)} Ah`]]}}},
+ {cat:'antrieb',gen(){const B=pick([185,195,205,215,225,235]),H=pick([40,45,50,55,60,65]),D=pick([15,16,17,18]);const d=D*25.4+2*B*H/100;
+  const geg=[`Reifengröße ${B}/${H} R${D}`];
+  const s1=['Lies die Reifengröße: Breite B in mm / Querschnitt H/B in % / R = Radialreifen, dann Felgendurchmesser in Zoll.',`B = ${B} mm; H/B = ${H} %; D = ${D}″`];
+  const s2=['Rechne den Felgendurchmesser in mm um (1 Zoll = 25,4 mm).',`${D} · 25,4 = ${f(D*25.4,1)} mm`];
+  const s3=['Berechne die Flankenhöhe: Breite mal Querschnittsverhältnis.',`H = ${B} · ${H} / 100 = ${f(B*H/100,2)} mm`];
+  if(Math.random()<.5)return{fid:'reifen',text:'Ein Kunde möchte wissen, wie hoch sein neuer Reifen insgesamt ist.',geg,ges:'Reifenaußendurchmesser d',unit:'mm',ans:d,dec:0,
+   steps:[s1,s2,s3,['Die Flanke kommt oben und unten dazu: Felge plus zweimal Flankenhöhe.',`d = ${f(D*25.4,1)} + 2 · ${f(B*H/100,2)} = ${fx(d,0)} mm`]]};
+  const U=Math.PI*d;return{fid:'umfang',text:'Für die Tachoprüfung wird der theoretische Abrollumfang benötigt.',geg,ges:'Abrollumfang U',unit:'mm',ans:U,dec:0,
+  steps:[s1,s2,s3,['Berechne den Außendurchmesser: Felge plus zweimal Flankenhöhe.',`d = ${f(D*25.4,1)} + 2 · ${f(B*H/100,2)} = ${f(d,1)} mm`],['Umfang ist π mal Durchmesser.',`U = π · ${f(d,1)} = ${fx(U,0)} mm`]]}}},
+ {cat:'antrieb',gen(){const z1=rnd(11,19),z2=rnd(35,47);const i=z2/z1;
+  if(Math.random()<.5)return{fid:'uebersetzung',text:'Im Achsgetriebe treibt das Kegelrad das Tellerrad an.',geg:[`z₁ = ${z1} (Kegelrad, treibend)`,`z₂ = ${z2} (Tellerrad)`],ges:'Übersetzung i',unit:'',ans:i,dec:2,
+   steps:[['Übersetzung = Zähne getriebenes Rad durch Zähne treibendes Rad.',`i = z₂ / z₁ = ${z2} / ${z1} = ${fx(i,2)}`]]};
+  const n=rnd(1500,4500,100);const n2=n/i;
+  return{fid:'uebersetzung',text:'Das Kegelrad dreht mit der angegebenen Drehzahl. Wie schnell dreht das Tellerrad?',geg:[`z₁ = ${z1}`,`z₂ = ${z2}`,`n₁ = ${f(n)} 1/min`],ges:'Drehzahl n₂',unit:'1/min',ans:n2,dec:0,
+  steps:[['Berechne zuerst die Übersetzung.',`i = ${z2} / ${z1} = ${f(i,3)}`],['Aus i = n₁ / n₂ folgt n₂ = n₁ / i. Ins Langsame übersetzt: n₂ wird kleiner.',`n₂ = ${f(n)} / ${f(i,3)} = ${fx(n2,0)} 1/min`]]}}},
+ {cat:'antrieb',gen(){const n=rnd(2000,4500,100),i=rnd(2.8,4.4,0.01),U=rnd(1.85,2.05,0.01);const nr=n/i,v=nr*U*60/1000;
+  return{fid:'fahrgeschw',text:'Im höchsten Gang wird mit konstanter Motordrehzahl gefahren.',geg:[`n = ${f(n)} 1/min`,`i<sub>ges</sub> = ${f(i,2)}`,`U = ${f(U,2)} m`],ges:'Fahrgeschwindigkeit v',unit:'km/h',ans:v,dec:1,
+  steps:[['Berechne die Raddrehzahl: Motordrehzahl durch Gesamtübersetzung.',`n<sub>Rad</sub> = ${f(n)} / ${f(i,2)} = ${f(nr,1)} 1/min`],
+   ['Strecke pro Minute = Raddrehzahl mal Abrollumfang.',`${f(nr,1)} · ${f(U,2)} = ${f(nr*U,1)} m/min`],
+   ['Rechne m/min in km/h um: · 60 (Minuten → Stunde) und ÷ 1000 (m → km).',`v = ${f(nr*U,1)} · 60 / 1000 = ${fx(v,1)} km/h`]]}}},
+ {cat:'hydraulik',gen(){const F=rnd(800,3000,50),d=rnd(19,28,0.5);const A=Math.PI/4*(d/10)**2,p=F/A/10;
+  return{fid:'druck',text:'Auf den Kolben eines Hauptbremszylinders wirkt die Kraft vom Bremskraftverstärker.',geg:[`F = ${f(F)} N`,`d = ${f(d,1)} mm`],ges:'Druck p',unit:'bar',ans:p,dec:1,
+  steps:[['Rechne den Durchmesser in cm um und berechne die Kolbenfläche.',`A = π/4 · ${f(d/10,2)}² = ${f(A,3)} cm²`],
+   ['Druck = Kraft durch Fläche.',`p = ${f(F)} / ${f(A,3)} = ${f(F/A,1)} N/cm²`],
+   ['Rechne in bar um: 10 N/cm² = 1 bar.',`p = ${f(F/A,1)} / 10 = ${fx(p,1)} bar`]]}}},
+ {cat:'hydraulik',gen(){const F1=rnd(600,2000,50),d1=pick([19.05,20.64,22.22,23.81,25.4]),d2=rnd(38,57,1);const r=(d2/d1)**2,F2=F1*r;
+  return{fid:'hydraulik',text:'Berechne die Spannkraft am Bremssattelkolben (Verluste vernachlässigt).',geg:[`F₁ = ${f(F1)} N`,`d₁ (HBZ) = ${f(d1,2)} mm`,`d₂ (Sattel) = ${d2} mm`],ges:'Kolbenkraft F₂',unit:'N',ans:F2,dec:0,
+  steps:[['Der Druck ist überall gleich, also verhalten sich die Kräfte wie die Flächen. Flächenverhältnis = Durchmesserverhältnis zum Quadrat.',`A₂ / A₁ = (${d2} / ${f(d1,2)})² = ${f(r,3)}`],
+   ['Multipliziere die Eingangskraft mit dem Flächenverhältnis.',`F₂ = ${f(F1)} · ${f(r,3)} = ${fx(F2,0)} N`]]}}},
+ {cat:'hydraulik',gen(){const I=rnd(150,400,10),U=12;const Pzu=U*I/1000,Pab=+(Pzu*rnd(0.45,0.7,0.01)).toFixed(2);const eta=Pab/Pzu*100;
+  return{fid:'wirkungsgrad',text:'Beim Startvorgang wird am Starter folgendes gemessen.',geg:[`U = ${U} V`,`I = ${I} A`,`P<sub>ab</sub> = ${f(Pab,2)} kW`],ges:'Wirkungsgrad η',unit:'%',ans:eta,dec:1,
+  steps:[['Berechne die zugeführte elektrische Leistung P = U · I.',`P<sub>zu</sub> = ${U} · ${I} = ${f(U*I)} W`],
+   ['Bring beide Leistungen auf dieselbe Einheit (kW).',`P<sub>zu</sub> = ${f(Pzu,2)} kW`],
+   ['Teile abgegebene durch zugeführte Leistung, mal 100 für Prozent.',`η = ${f(Pab,2)} / ${f(Pzu,2)} · 100 = ${fx(eta,1)} %`]]}}},
+ {cat:'prozent',gen(){const G=rnd(800,12000,50),p=rnd(2,35,0.5);const W=G*p/100;
+  if(Math.random()<.5)return{fid:'prozentwert',text:'Der Werkstattumsatz eines Monats soll anteilig ausgewertet werden.',geg:[`Grundwert G = ${eur(G)}`,`p = ${f(p,1)} %`],ges:'Prozentwert W',unit:'€',ans:W,dec:2,
+   steps:[['Rechne 1 % vom Grundwert aus (÷ 100).',`1 % = ${eur(G/100)}`],['Multipliziere mit dem Prozentsatz.',`W = ${eur(G/100)} · ${f(p,1)} = ${eur(W)}`]]};
+  const W2=+W.toFixed(2);const p2=W2*100/G;return{fid:'prozentsatz',text:'Wie viel Prozent macht der Teilbetrag am Gesamtbetrag aus?',geg:[`Prozentwert W = ${eur(W2)}`,`Grundwert G = ${eur(G)}`],ges:'Prozentsatz p',unit:'%',ans:p2,dec:1,
+   steps:[['Teile den Teilbetrag durch den Grundwert. Das ist der Anteil als Dezimalzahl.',`${f(W2,2)} / ${f(G)} = ${f(W2/G,5)}`],['Mal 100 ergibt Prozent.',`p = ${f(W2/G,5)} · 100 = ${fx(p2,1)} %`]]}}},
+ {cat:'prozent',gen(){const K=rnd(2000,40000,500),p=rnd(3,12,0.25),t=rnd(30,300,1);const Z=K*p*t/36000;
+  return{fid:'zinsen',text:'Für eine neue Hebebühne wird ein kurzfristiger Kredit aufgenommen.',geg:[`K = ${eur(K)}`,`p = ${f(p,2)} % p. a.`,`t = ${t} Tage`],ges:'Zinsen Z',unit:'€',ans:Z,dec:2,
+  steps:[['Berechne die Jahreszinsen: Kapital mal Zinssatz durch 100.',`${f(K)} · ${f(p,2)} / 100 = ${eur(K*p/100)}`],
+   ['Kaufmännisch hat das Jahr 360 Tage. Teile durch 360 und nimm mal die Tage.',`Z = ${eur(K*p/100)} · ${t} / 360 = ${eur(Z)}`]]}}},
+ {cat:'prozent',gen(){const R=rnd(400,9000,1)+rnd(0,99)/100,s=pick([2,2.5,3]);const S=R*s/100,Zb=R-S;
+  return{fid:'skonto',text:'Eine Lieferantenrechnung wird innerhalb der Skontofrist bezahlt.',geg:[`R = ${eur(R)}`,`Skonto = ${f(s,1)} %`],ges:'Überweisungsbetrag',unit:'€',ans:Zb,dec:2,
+  steps:[['Berechne den Skontobetrag vom Rechnungsbetrag.',`Skonto = ${eur(R)} · ${f(s,1)} / 100 = ${eur(S)}`],['Ziehe den Skonto vom Rechnungsbetrag ab.',`Zahlbetrag = ${eur(R)} − ${eur(S)} = ${eur(Zb)}`]]}}},
+ {cat:'prozent',gen(){if(Math.random()<.5){const N=rnd(80,2500,1)+rnd(0,99)/100;const B=N*1.19;
+   return{fid:'mwst',text:'Auf eine Reparaturrechnung kommen 19 % Umsatzsteuer.',geg:[`Netto = ${eur(N)}`],ges:'Bruttobetrag',unit:'€',ans:B,dec:2,
+   steps:[['Berechne die Umsatzsteuer: 19 % vom Nettobetrag.',`USt = ${eur(N)} · 0,19 = ${eur(N*0.19)}`],['Addiere zum Nettobetrag (oder direkt Netto · 1,19).',`Brutto = ${eur(N)} + ${eur(N*0.19)} = ${eur(B)}`]]}}
+  const B=rnd(100,3000,1)+rnd(0,99)/100;const N=B/1.19;
+  return{fid:'mwst',text:'Ein Kunde nennt dir einen Bruttopreis. Rechne den Nettobetrag heraus (19 %).',geg:[`Brutto = ${eur(B)}`],ges:'Nettobetrag',unit:'€',ans:N,dec:2,
+  steps:[['Brutto entspricht 119 %. Teile deshalb durch 1,19 (nicht 19 % abziehen!).',`Netto = ${eur(B)} / 1,19 = ${eur(N)}`]]}}},
+ {cat:'kalk',gen(){const L=rnd(17,27,0.5),GK=rnd(110,190,5),G=rnd(5,15,1);const sk=L*(1+GK/100),VS=sk*(1+G/100);
+  return{fid:'stundensatz',text:'Ermittle den Stundenverrechnungssatz (netto) für einen Gesellen.',geg:[`Lohn L = ${eur(L)}/h`,`GK-Zuschlag = ${GK} %`,`Gewinn = ${G} %`],ges:'Verrechnungssatz VS',unit:'€/h',ans:VS,dec:2,
+  steps:[['Rechne den Gemeinkostenzuschlag auf den Lohn (Faktor 1 + GK/100). Ergebnis: Selbstkosten je Stunde.',`${eur(L)} · ${f(1+GK/100,2)} = ${eur(sk)}`],
+   ['Schlag den Gewinn auf die Selbstkosten (Faktor 1 + G/100).',`VS = ${eur(sk)} · ${f(1+G/100,2)} = ${eur(VS)}`]]}}},
+ {cat:'kalk',gen(){const Kf=rnd(12000,90000,500),p=rnd(40,180,1),kv=+(p*rnd(0.4,0.75,0.01)).toFixed(2);const db=p-kv,x=Kf/db,xc=Math.ceil(x-1e-9);
+  return{fid:'breakeven',text:'Für eine Inspektionspauschale soll die Gewinnschwelle pro Jahr ermittelt werden. Runde auf ganze Stück auf.',geg:[`K<sub>f</sub> = ${eur(Kf)}`,`p = ${eur(p)}`,`k<sub>v</sub> = ${eur(kv)}`],ges:'Break-even-Menge x',unit:'Stück',ans:xc,dec:0,tol:0.4,
+  steps:[['Berechne den Deckungsbeitrag je Stück: Preis minus variable Kosten.',`DB = ${eur(p)} − ${eur(kv)} = ${eur(db)}`],
+   ['Teile die Fixkosten durch den Deckungsbeitrag.',`x = ${f(Kf)} / ${fx(db,2)} = ${f(x,2)}`],
+   ['Erst ab dem nächsten ganzen Stück sind die Fixkosten gedeckt: aufrunden.',`x = ${xc} Stück`]]}}},
+ {cat:'kalk',gen(){const AK=rnd(8000,60000,100),ND=pick([5,6,8,10]);const a=AK/ND;
+  if(Math.random()<.5)return{fid:'afa',text:'Ein Achsvermessungsstand wird linear abgeschrieben.',geg:[`AK = ${eur(AK)}`,`ND = ${ND} Jahre`],ges:'jährliche AfA',unit:'€',ans:a,dec:2,
+   steps:[['Linear heißt: jedes Jahr gleich viel. Teile die Anschaffungskosten durch die Nutzungsdauer.',`AfA = ${eur(AK)} / ${ND} = ${eur(a)}`]]};
+  const n=rnd(1,ND-1);const rb=AK-n*a;return{fid:'afa',text:'Ein Reifenmontiergerät wird linear abgeschrieben. Wie hoch ist der Restbuchwert?',geg:[`AK = ${eur(AK)}`,`ND = ${ND} Jahre`,`nach ${n} Jahr${n>1?'en':''}`],ges:'Restbuchwert',unit:'€',ans:rb,dec:2,
+  steps:[['Berechne die jährliche Abschreibung.',`AfA = ${eur(AK)} / ${ND} = ${eur(a)}`],['Rechne die Abschreibung der vergangenen Jahre zusammen.',`${n} · ${eur(a)} = ${eur(n*a)}`],['Ziehe sie von den Anschaffungskosten ab.',`Restbuchwert = ${eur(AK)} − ${eur(n*a)} = ${eur(rb)}`]]}}},
+ {cat:'kalk',gen(){const L=rnd(200,4000,10),r=rnd(5,25,1),s=pick([2,3]),bk=rnd(10,120,1);const zep=L*(1-r/100),bep=zep*(1-s/100),bp=bep+bk;
+  return{fid:'bezugspreis',text:'Ein Satz Reifen wird beim Großhändler bestellt.',geg:[`LEP = ${eur(L)}`,`Rabatt = ${r} %`,`Skonto = ${s} %`,`Bezugskosten = ${eur(bk)}`],ges:'Bezugspreis BP',unit:'€',ans:bp,dec:2,
+  steps:[['Zieh den Rabatt vom Listeneinkaufspreis ab → Zieleinkaufspreis.',`ZEP = ${eur(L)} − ${eur(L*r/100)} = ${eur(zep)}`],
+   ['Zieh den Skonto vom Zieleinkaufspreis ab (nicht vom LEP!) → Bareinkaufspreis.',`BEP = ${eur(zep)} − ${eur(zep*s/100)} = ${eur(bep)}`],
+   ['Addiere die Bezugskosten (Fracht, Verpackung) → Bezugspreis.',`BP = ${eur(bep)} + ${eur(bk)} = ${eur(bp)}`]]}}}
+];
+
+/* ---------- Zustand ---------- */
+const S={mode:'calc',cats:new Set(Object.keys(CATS)),len:10,round:null,stats:store.get('fw-stats',{}),
+  calc:{open:!window.matchMedia('(max-width:560px)').matches,expr:'',hist:[]},
+  mat:store.get('fw-mat',[]),imgs:[],matMsg:null,gen:{busy:false,ctl:null,count:10,art:'gemischt',fokus:''}};
+let SAMPLE; let IMG_LIMIT=null;
+
+function bump(cat,ok){const s=S.stats[cat]||(S.stats[cat]={r:0,t:0});s.t++;if(ok)s.r++;store.set('fw-stats',S.stats)}
+function fromBuiltIn(g){const q=g.gen();const fm=FBY[q.fid];return{...q,kind:'calc',cat:g.cat,fname:fm.name,formel:fm.formel,rel:CATS[g.cat].grp==='kfz'?0.005:0.001}}
+function mcFromFormula(e){
+  const same=F.filter(x=>x.id!==e.id&&CATS[x.cat].grp===CATS[e.cat].grp),other=F.filter(x=>x.id!==e.id&&CATS[x.cat].grp!==CATS[e.cat].grp);
+  const dis=shuffle(same).slice(0,3);while(dis.length<3)dis.push(other[dis.length]);
+  const opts=shuffle([e,...dis]);
+  return{kind:'mc',cat:e.cat,frage:e.frage,opts:opts.map(x=>x.formel),fm:true,correct:opts.indexOf(e),fname:e.name,formel:e.formel,erkl:e.legende}
+}
+function startRound(mode,items){S.round={mode,items,idx:0,answered:false,peek:false,shown:0,open:new Set()};render()}
+function newRound(){
+  if(S.mode==='calc'){const pool=GENS.filter(g=>S.cats.has(g.cat));const items=[];let last=null;
+    for(let i=0;i<S.len;i++){let g,k=0;do{g=pick(pool);k++}while(g===last&&pool.length>1&&k<10);last=g;items.push(fromBuiltIn(g))}
+    startRound('calc',items)}
+  else if(S.mode==='mc'){const pool=shuffle(F.filter(x=>S.cats.has(x.cat)));startRound('mc',Array.from({length:S.len},(_,i)=>mcFromFormula(pool[i%pool.length])))}
+}
+
+/* ---------- Setup ---------- */
+function renderSetup(){
+  const el=$('#setup');
+  if(S.mode==='ref'){el.innerHTML=`<input class="search" id="q" type="search" placeholder="Formel suchen, z. B. Hubraum, Zinsen, Druck" aria-label="Formel suchen">`;$('#q').addEventListener('input',renderRef);return}
+  if(S.mode==='mat'){renderMatSetup();return}
+  const grp=g=>`<div class="grp"><span class="grp-label">${GRPS[g]}</span><div class="chips">${Object.entries(CATS).filter(([,c])=>c.grp===g).map(([k,c])=>`<button class="chip" data-cat="${k}" aria-pressed="${S.cats.has(k)}">${c.name}</button>`).join('')}</div></div>`;
+  el.innerHTML=grp('kfz')+grp('kfm')+`<div class="setrow"><label for="len">Aufgaben pro Runde</label><select id="len">${[5,10,15,20].map(n=>`<option ${n===S.len?'selected':''}>${n}</option>`).join('')}</select><button class="btn ghost small" id="restart">Neue Runde starten</button></div>`;
+  el.querySelectorAll('.chip').forEach(b=>b.onclick=()=>{const k=b.dataset.cat;if(S.cats.has(k)){if(S.cats.size>1)S.cats.delete(k)}else S.cats.add(k);store.set('fw-cats',[...S.cats]);newRound()});
+  $('#len').onchange=e=>{S.len=+e.target.value;store.set('fw-len',S.len);newRound()};
+  $('#restart').onclick=newRound;
+}
+
+/* ---------- Unterlagen ---------- */
+const PDFJS='lib/pdf.min.js',PDFW='lib/pdf.worker.min.js';
+function loadScript(src){return new Promise((res,rej)=>{const s=document.createElement('script');s.src=src;s.onload=res;s.onerror=()=>rej(new Error('load'));document.head.appendChild(s)})}
+async function pdfText(file){
+  if(!window.pdfjsLib){await loadScript(PDFJS);await loadScript(PDFW)}
+  pdfjsLib.GlobalWorkerOptions.workerSrc=PDFW;
+  const doc=await pdfjsLib.getDocument({data:new Uint8Array(await file.arrayBuffer())}).promise;
+  let out='';const n=Math.min(doc.numPages,400);
+  for(let p=1;p<=n;p++){const tc=await (await doc.getPage(p)).getTextContent();out+=`\n[Seite ${p}]\n`+tc.items.map(x=>x.str+(x.hasEOL?'\n':' ')).join('')}
+  return out.trim();
+}
+function saveMat(){if(!store.set('fw-mat',S.mat))S.matMsg={err:true,t:'Unterlagen sind zu groß zum Speichern im Browser. Sie bleiben nur, bis du die Seite schließt.'}}
+async function addFiles(files){
+  for(const file of files){
+    const nm=file.name||'Datei';
+    try{
+      if(file.type.startsWith('image/')){
+        if(!IMG_LIMIT){S.matMsg={err:true,t:`„${nm}“: Fotos kann diese Ansicht nicht an Claude senden. Lade Text oder PDF hoch.`};continue}
+        if(S.imgs.length>=IMG_LIMIT.maxCount){S.matMsg={err:true,t:`Höchstens ${IMG_LIMIT.maxCount} Fotos pro Erstellung.`};continue}
+        S.imgs.push({id:crypto.randomUUID?.()||String(Date.now()+Math.random()),name:nm,file,url:URL.createObjectURL(file)});S.matMsg={t:`Foto „${nm}“ hinzugefügt (nur für diese Sitzung).`};
+      }else{
+        S.matMsg={t:`Lese „${nm}“ …`};renderMatSetup();
+        const text=/\.pdf$/i.test(nm)||file.type==='application/pdf'?await pdfText(file):await file.text();
+        if(!text.trim()){S.matMsg={err:true,t:`In „${nm}“ ist kein Text lesbar (vermutlich ein Scan). Fotografiere die Seiten und lade die Fotos hoch.`};continue}
+        S.mat.push({id:String(Date.now()+Math.random()),name:nm,text});saveMat();if(!S.matMsg?.err)S.matMsg={t:`„${nm}“ hinzugefügt: ${f(text.length,0)} Zeichen.`};
+      }
+    }catch(e){S.matMsg={err:true,t:`„${nm}“ konnte nicht gelesen werden.`}}
+  }
+  renderMatSetup();
+}
+function renderMatSetup(){
+  const el=$('#setup'),g=S.gen,can=!!SAMPLE,total=S.mat.length+S.imgs.length;
+  el.innerHTML=`<div class="mat">
+    <div><h2>Meine Unterlagen</h2><p class="hint" style="margin-top:4px">Skripte, Mitschriften, Formelblätter oder Fotos aus der Fachkunde. Claude baut die Aufgaben nur aus diesem Material – kein Internet, kein Wissen von außen. Jede Aufgabe nennt die Stelle, aus der sie stammt.</p></div>
+    <div class="drop" id="drop"><label for="file" class="btn ghost small" tabindex="0">Dateien wählen</label><input type="file" id="file" multiple accept=".txt,.md,.csv,.pdf,text/plain,application/pdf${IMG_LIMIT?',image/png,image/jpeg,image/webp':''}" hidden><span class="hint">oder hierher ziehen · PDF, TXT, MD, CSV${IMG_LIMIT?', Fotos (JPG/PNG)':''}</span></div>
+    <details class="paste"><summary>Text einfügen</summary><input class="field" id="pname" placeholder="Titel, z. B. Skript Motor Kap. 3"><textarea id="ptext" rows="6" placeholder="Text aus deinem Skript hier einfügen …"></textarea><div><button class="btn small" id="padd">Hinzufügen</button></div></details>
+    ${total?`<ul class="srcs">${S.mat.map(m=>`<li><span class="kind">Text</span><span class="nm">${esc(m.name)}</span><span class="meta">${f(m.text.length,0)} Z.</span><button class="linkbtn" data-del="${m.id}">Entfernen</button></li>`).join('')}${S.imgs.map(m=>`<li><img src="${m.url}" alt=""><span class="nm">${esc(m.name)}</span><span class="meta">Foto</span><button class="linkbtn" data-delimg="${m.id}">Entfernen</button></li>`).join('')}</ul>`:'<p class="hint">Noch keine Unterlagen. Füge mindestens eine Datei oder einen Text hinzu.</p>'}
+    <div class="genrow">
+      <div><label class="lbl" for="gcount">Anzahl</label><select id="gcount">${[5,10,15].map(n=>`<option ${n===g.count?'selected':''}>${n}</option>`).join('')}</select></div>
+      <div><label class="lbl" for="gart">Art</label><select id="gart"><option value="gemischt" ${g.art==='gemischt'?'selected':''}>Gemischt</option><option value="rechnen" ${g.art==='rechnen'?'selected':''}>Nur Rechnen</option><option value="quiz" ${g.art==='quiz'?'selected':''}>Nur Quiz</option></select></div>
+      <div><label class="lbl" for="gfokus">Schwerpunkt (optional)</label><input class="field" id="gfokus" placeholder="z. B. Bremsanlage, Zinsrechnung" value="${esc(g.fokus)}"></div>
+    </div>
+    <div class="tools">${g.busy?'<button class="btn ghost" id="gstop">Stopp</button>':`<button class="btn" id="ggo" ${!can||!total?'disabled':''}>Aufgaben aus Unterlagen erstellen</button>`}</div>
+    ${keyHtml()}
+    ${g.busy?'<p class="status">Claude liest deine Unterlagen und baut Aufgaben mit Lösungsweg. Das dauert meist 30 bis 90 Sekunden.</p>':S.matMsg?`<p class="status ${S.matMsg.err?'err':''}">${esc(S.matMsg.t)}</p>`:''}
+  </div>`;
+  const fi=$('#file');fi.onchange=()=>{addFiles([...fi.files]);fi.value=''};
+  el.querySelector('label[for="file"]').onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();fi.click()}};
+  const dr=$('#drop');
+  dr.ondragover=e=>{e.preventDefault();dr.classList.add('over')};dr.ondragleave=()=>dr.classList.remove('over');
+  dr.ondrop=e=>{e.preventDefault();dr.classList.remove('over');addFiles([...e.dataTransfer.files])};
+  $('#padd').onclick=()=>{const t=$('#ptext').value.trim();if(!t)return;S.mat.push({id:String(Date.now()),name:$('#pname').value.trim()||'Eingefügter Text',text:t});S.matMsg={t:'Text hinzugefügt.'};saveMat();renderMatSetup()};
+  el.querySelectorAll('[data-del]').forEach(b=>b.onclick=()=>{S.mat=S.mat.filter(m=>m.id!==b.dataset.del);S.matMsg=null;saveMat();renderMatSetup()});
+  el.querySelectorAll('[data-delimg]').forEach(b=>b.onclick=()=>{const m=S.imgs.find(x=>x.id===b.dataset.delimg);if(m)URL.revokeObjectURL(m.url);S.imgs=S.imgs.filter(x=>x!==m);renderMatSetup()});
+  $('#gcount').onchange=e=>g.count=+e.target.value;$('#gart').onchange=e=>g.art=e.target.value;$('#gfokus').oninput=e=>g.fokus=e.target.value;
+  if($('#ggo'))$('#ggo').onclick=generate;
+  bindKey();
+  if($('#gstop'))$('#gstop').onclick=()=>g.ctl?.abort();
+}
+
+function buildMaterial(fokus){
+  const CAP=90000;const segs=[];
+  S.mat.forEach(m=>m.text.split(/\n\s*\n/).forEach(p=>{p=p.trim();if(p)segs.push({src:m.name,p})}));
+  const full=segs.reduce((n,s)=>n+s.p.length,0);let use=segs,cut=false;
+  if(full>CAP){cut=true;
+    const kw=fokus.toLowerCase().split(/[\s,;]+/).filter(w=>w.length>2);
+    const scored=segs.map((s,i)=>({...s,i,sc:kw.reduce((n,w)=>n+(s.p.toLowerCase().split(w).length-1),0)+Math.random()*.5}));
+    scored.sort((a,b)=>b.sc-a.sc);let n=0;const keep=[];for(const s of scored){if(n+s.p.length>CAP)continue;keep.push(s);n+=s.p.length}
+    use=keep.sort((a,b)=>a.i-b.i)}
+  let out='',cur=null;for(const s of use){if(s.src!==cur){out+=`\n\n=== Quelle: ${s.src} ===\n`;cur=s.src}out+=s.p+'\n\n'}
+  return{text:out.trim(),cut};
+}
+function fromMat(a){
+  if(!a||typeof a!=='object')return null;const th=String(a.thema||'Unterlagen').slice(0,48);
+  if(a.typ==='quiz'){const o=Array.isArray(a.optionen)?a.optionen.map(x=>String(x)).filter(Boolean):[];const r=Number(a.richtig);
+    if(!a.frage||o.length<2||!(r>=0&&r<o.length))return null;const idx=shuffle(o.map((_,i)=>i));
+    return{kind:'mc',cat:'mat',thema:th,frage:esc(a.frage),opts:idx.map(i=>esc(o[i])),correct:idx.indexOf(r),fname:'',formel:'',erkl:esc(a.erklaerung||''),quelle:esc(a.quelle||'')}}
+  let ans=evalExpr(a.ausdruck);if(!isFinite(ans))ans=Number(String(a.antwort).replace(',','.'));if(!isFinite(ans)||!a.text)return null;
+  const dec=Math.max(0,Math.min(4,parseInt(a.nachkommastellen,10)||0));
+  let steps=(Array.isArray(a.schritte)?a.schritte:[]).map(s=>[esc(s?.anleitung||''),esc(s?.rechnung||'')]).filter(s=>s[0]||s[1]);
+  if(!steps.length)steps=[['Setze die gegebenen Werte in die Formel ein.',esc(a.ausdruck||'')]];
+  return{kind:'calc',cat:'mat',thema:th,text:esc(a.text),geg:(Array.isArray(a.gegeben)?a.gegeben:[]).map(x=>esc(x)),ges:esc(a.gesucht||'Ergebnis'),unit:esc(a.einheit||''),ans,dec,steps,
+    fname:esc(a.formelname||'Formel aus deinen Unterlagen'),formel:esc(a.formel||''),quelle:esc(a.quelle||''),rel:0.01}
+}
+const ERR={not_granted:'Du hast der Seite nicht erlaubt, Claude zu nutzen. Lade die Seite neu, um erneut gefragt zu werden.',sampling_disabled:'Claude ist für dein Konto in dieser Ansicht nicht verfügbar.',
+  rate_limited:'Gerade zu viele Anfragen oder dein Nutzungslimit ist erreicht. Versuch es in ein paar Minuten nochmal.',prompt_too_large:'Die Unterlagen sind zu groß. Gib einen Schwerpunkt an oder entferne Quellen.',
+  invalid_json:'Die Antwort war unvollständig. Versuch es nochmal oder wähle weniger Aufgaben.',refused:'Claude hat diese Anfrage abgelehnt. Prüfe, ob die Unterlagen zum Lernstoff passen.',
+  session_expired:'Du bist abgemeldet. Melde dich neu an und versuch es nochmal.',image_rejected:'Ein Foto konnte nicht verarbeitet werden. Entferne es oder nimm ein anderes.',
+  empty_items:'Aus den Unterlagen ließen sich keine brauchbaren Aufgaben bauen. Füge mehr Material mit Formeln oder Rechenbeispielen hinzu.'};
+async function generate(){
+  const g=S.gen;if(!SAMPLE||g.busy)return;
+  if(!S.mat.length&&!S.imgs.length){S.matMsg={err:true,t:'Füge zuerst Unterlagen hinzu.'};renderMatSetup();return}
+  const {text,cut}=buildMaterial(g.fokus);
+  const art={gemischt:'etwa zwei Drittel Rechenaufgaben und ein Drittel Quizfragen (Formeln, Begriffe, Zusammenhänge) mit je 4 Antwortmöglichkeiten',rechnen:'nur Rechenaufgaben',quiz:'nur Quizfragen mit je 4 Antwortmöglichkeiten, genau eine davon richtig'}[g.art];
+  const imgs=IMG_LIMIT?S.imgs.slice(0,IMG_LIMIT.maxCount):[];
+  const prompt=`Du bist Prüfer an einer Meisterschule und erstellst Übungsaufgaben für einen Meisterschüler (Kfz-Handwerk und kaufmännische Teile).
+
+REGELN
+1. Verwende ausschließlich Formeln, Zusammenhänge, Begriffe, Definitionen und Fakten aus dem MATERIAL unten${imgs.length?' und aus den angehängten Bildern (Fotos oder Scans aus den Unterlagen des Schülers)':''}. Kein Wissen von außen, keine Internetquellen, nichts ergänzen, was nicht im Material steht.
+2. Bei Rechenaufgaben darfst du neue, realistische Zahlenwerte wählen. Formel und Rechenweg müssen aber genau so im Material vorkommen.
+3. Reicht das Material für eine Aufgabe nicht, erstelle lieber weniger Aufgaben, statt zu raten.
+4. "quelle" nennt den Namen der Quelle (wie nach "=== Quelle:" angegeben${imgs.length?' oder "Foto: Dateiname"':''}) und den Abschnitt, die Überschrift oder die Seite.
+5. Rechne jede Rechenaufgabe sorgfältig nach. "ausdruck" ist die komplette Rechnung mit den gegebenen Zahlen in einer Zeile, nur Zahlen mit Dezimalpunkt, + - * / ^ ( ) sowie pi und sqrt(...). Er muss exakt "antwort" ergeben.
+6. "schritte" ist eine Anleitung zum Selbstrechnen in 2 bis 5 Schritten: "anleitung" sagt in einem Satz, was zu tun ist (Formel wählen oder umstellen, Einheit umrechnen, einsetzen, runden), "rechnung" zeigt die konkrete Rechnung mit Zwischenergebnis.
+7. Deutsch, Klartext ohne Markdown oder HTML. Hochzahlen als ² ³, Indizes mit Unterstrich (V_h).
+
+AUFTRAG
+Erstelle ${g.count} Aufgaben: ${art}.${g.fokus.trim()?` Schwerpunkt: ${g.fokus.trim()}.`:''} Wiederhole keine Aufgabe.
+
+ANTWORTFORMAT
+Antworte nur mit JSON in genau dieser Form:
+{"aufgaben":[
+{"typ":"rechnen","thema":"kurzes Thema","text":"Situation","gegeben":["d = 80 mm"],"gesucht":"Hubraum V_h","einheit":"cm³","nachkommastellen":0,"formelname":"Hubraum","formel":"V_h = π/4 · d² · s","schritte":[{"anleitung":"…","rechnung":"…"}],"ausdruck":"pi/4*8^2*9","antwort":452.39,"quelle":"…"},
+{"typ":"quiz","thema":"kurzes Thema","frage":"…","optionen":["…","…","…","…"],"richtig":0,"erklaerung":"…","quelle":"…"}
+]}
+
+MATERIAL
+${text||'(nur Bilder)'}`;
+  g.busy=true;g.ctl=new AbortController();S.matMsg=null;renderMatSetup();
+  try{
+    const opts={signal:g.ctl.signal,cache:false};if(imgs.length)opts.images=imgs.map(x=>x.file);
+    const res=await SAMPLE.json(prompt,opts);
+    const items=(Array.isArray(res?.aufgaben)?res.aufgaben:Array.isArray(res)?res:[]).map(fromMat).filter(Boolean);
+    if(!items.length)throw{code:'empty_items'};
+    S.matMsg={t:`${items.length} Aufgaben aus deinen Unterlagen erstellt.${cut?' Die Unterlagen waren lang, deshalb wurde ein Ausschnitt genutzt. Mit einem Schwerpunkt steuerst du, welcher.':''}`};
+    g.busy=false;startRound('mat',items);return;
+  }catch(e){if(e?.code!=='cancelled')S.matMsg={err:true,t:ERR[e?.code]||'Die Verbindung zu Claude ist abgebrochen. Versuch es nochmal.'}}
+  g.busy=false;render();
+}
+
+/* ---------- Bühne ---------- */
+function bar(){const r=S.round;return`<div class="bar" style="--n:${r.items.length}" aria-hidden="true">${r.items.map((it,i)=>`<span class="cell ${it.ok===true?'ok':it.ok===false?'bad':i===r.idx?'now':''}"></span>`).join('')}</div>`}
+function head(it){const r=S.round;return`<div class="qhead"><span class="count">Aufgabe ${String(r.idx+1).padStart(2,'0')} <small>/ ${String(r.items.length).padStart(2,'0')}</small></span><span class="tag">${esc(it.thema||catName(it.cat))}</span></div>${bar()}`}
+
+function render(){
+  document.querySelectorAll('.modes button').forEach(b=>b.setAttribute('aria-selected',b.dataset.mode===S.mode));
+  renderSetup();$('#calcSlot').innerHTML='';
+  if(S.mode==='ref'){renderRef();return}
+  const r=S.round;
+  if(S.mode==='mat'&&(!r||r.mode!=='mat')){renderMatEmpty();return}
+  if(!r||r.mode!==S.mode){newRound();return}
+  if(r.idx>=r.items.length){renderEnd();return}
+  const it=r.items[r.idx];it.kind==='calc'?renderCalc(it):renderMC(it);
+}
+function renderMatEmpty(){
+  $('#stage').innerHTML=`<article class="card"><h2 style="font-size:24px;text-transform:uppercase">So funktioniert es</h2>
+   <ol class="howto"><li>Lade oben deine Unterlagen hoch: Skript als PDF, Mitschrift als Text oder Fotos von Seiten mit Formeln.</li>
+   <li>Wähle Anzahl, Art und bei Bedarf einen Schwerpunkt, dann „Aufgaben aus Unterlagen erstellen“.</li>
+   <li>Du rechnest wie gewohnt: mit Anleitung Schritt für Schritt, Taschenrechner und Lösungsweg. Unter jeder Aufgabe steht, aus welcher Stelle deiner Unterlagen sie stammt.</li></ol>
+   <p class="hint">Text-Unterlagen bleiben in der App gespeichert. Fotos musst du nach einem Neustart der App erneut hinzufügen.</p></article>`;
+}
+
+function guideHtml(it,r){
+  if(!r.shown)return'';
+  return`<div class="guide"><div class="lbl">Anleitung</div>${it.steps.slice(0,r.shown).map((s,i)=>`<div class="gstep"><span class="gnum">${i+1}</span><span class="gtxt">${s[0]||'Rechne weiter:'}</span>${s[1]?(r.open.has(i)?`<div class="gcalc">${s[1]}</div>`:`<div style="grid-column:2"><button class="linkbtn" data-open="${i}">Rechnung zeigen</button></div>`):''}</div>`).join('')}</div>`;
+}
+function renderCalc(it){
+  const r=S.round;
+  const decTxt=it.dec===0?'auf ganze Zahlen':`auf ${it.dec} Nachkommastelle${it.dec>1?'n':''}`;
+  const more=r.shown<it.steps.length;
+  $('#stage').innerHTML=`<article class="card">${head(it)}
+   <p class="situ">${it.text}</p>
+   <dl class="sheet">${it.geg.length?`<dt>Geg.</dt><dd><ul>${it.geg.map(g=>`<li>${g}</li>`).join('')}</ul></dd>`:''}<dt>Ges.</dt><dd>${it.ges}</dd></dl>
+   ${r.answered?'':`<div class="tools">${it.formel?`<button class="linkbtn" id="peek">${r.peek?'Formel ausblenden':'Formel zeigen'}</button>`:''}${more?`<button class="linkbtn" id="step">${r.shown?'Nächster Schritt':'Anleitung Schritt für Schritt'}</button>`:''}<button class="linkbtn" id="skip">Weiß ich nicht – Lösung zeigen</button></div>
+   ${r.peek&&it.formel?`<div class="peek">${it.formel}</div>`:''}${guideHtml(it,r)}`}
+   <form id="af" autocomplete="off">
+     <div class="inrow"><div class="inbox"><input id="ans" inputmode="decimal" aria-label="Dein Ergebnis" placeholder="Ergebnis" ${r.answered?'disabled':''} value="${esc(it.user??'')}">${it.unit?`<span class="unit">${it.unit}</span>`:''}</div>
+     ${r.answered?'':'<button class="btn" type="submit">Prüfen</button>'}</div>
+   </form>
+   <p class="hint">Runde ${decTxt}. Komma oder Punkt als Dezimalzeichen.</p>
+   ${it.quelle?`<p class="src">Aus deinen Unterlagen: ${it.quelle}</p>`:''}
+   ${r.answered?feedbackCalc(it):''}
+  </article>`;
+  renderCalcPad(it);
+  if(!r.answered){
+    const inp=$('#ans');if(!r.keepFocus)inp.focus({preventScroll:r.shown>0});r.keepFocus=false;
+    $('#af').onsubmit=e=>{e.preventDefault();const x=parseNum(inp.value);if(isNaN(x)){inp.setCustomValidity('Bitte eine Zahl eingeben');inp.reportValidity();return}grade(it,x)};
+    inp.oninput=()=>{inp.setCustomValidity('');it.draft=inp.value};if(it.draft&&!inp.value)inp.value=it.draft;
+    if($('#peek'))$('#peek').onclick=()=>{r.peek=!r.peek;r.keepFocus=true;renderCalc(it)};
+    if($('#step'))$('#step').onclick=()=>{r.shown++;r.keepFocus=true;renderCalc(it)};
+    document.querySelectorAll('[data-open]').forEach(b=>b.onclick=()=>{r.open.add(+b.dataset.open);r.keepFocus=true;renderCalc(it)});
+    $('#skip').onclick=()=>grade(it,null);
+  }else{$('#next').focus();$('#next').onclick=next}
+}
+function grade(it,x){
+  const tol=it.tol??Math.max(0.51*10**-it.dec,Math.abs(it.ans)*(it.rel||0.005));
+  it.user=x===null?'':String(x).replace('.',',');it.ok=x!==null&&Math.abs(x-it.ans)<=tol;
+  bump(it.cat,it.ok);S.round.answered=true;renderCalc(it);
+}
+function feedbackCalc(it){
+  const r=S.round;
+  return`<section class="fb ${it.ok?'ok':'bad'}"><div class="verdict">${it.ok?'Richtig':it.user===''?'Lösungsweg':'Nicht ganz'}</div>
+   ${it.ok?'':`<div>Richtig ist: <strong class="formel">${fx(it.ans,it.dec)} ${it.unit}</strong></div>`}
+   ${it.formel?`<div><div class="lbl">Formel · ${it.fname}</div><div class="formel">${it.formel}</div></div>`:''}
+   <div class="guide" style="border:0;padding:0"><div class="lbl">Lös.</div>${it.steps.map((s,i)=>`<div class="gstep"><span class="gnum">${i+1}</span><span class="gtxt">${s[0]}</span>${s[1]?`<div class="gcalc">${s[1]}</div>`:''}</div>`).join('')}</div>
+   <div><button class="btn" id="next">${r.idx+1<r.items.length?'Nächste Aufgabe':'Auswertung'} →</button></div></section>`;
+}
+
+function renderMC(it){
+  const r=S.round;
+  $('#stage').innerHTML=`<article class="card">${head(it)}
+   <p class="mcq">${it.frage}</p>
+   <div class="opts">${it.opts.map((o,i)=>{let c='';if(r.answered){if(i===it.correct)c='right';else if(i===it.user)c='wrong'}
+     return`<button class="opt ${it.fm?'fm':''} ${c}" data-i="${i}" ${r.answered?'disabled':''}><span class="k">${'ABCDEF'[i]}</span><span>${o}</span></button>`}).join('')}</div>
+   ${it.quelle?`<p class="src">Aus deinen Unterlagen: ${it.quelle}</p>`:''}
+   ${r.answered?`<section class="fb ${it.ok?'ok':'bad'}"><div class="verdict">${it.ok?'Richtig':'Falsch'}</div>
+     ${it.formel?`<div><div class="lbl">${it.fname}</div><div class="formel">${it.formel}</div></div>`:''}${it.erkl?`<p class="hint" style="color:var(--ink)">${it.erkl}</p>`:''}
+     <div><button class="btn" id="next">${r.idx+1<r.items.length?'Nächste Frage':'Auswertung'} →</button></div></section>`:'<p class="hint">Tasten 1–4 oder A–D wählen direkt.</p>'}
+  </article>`;
+  if(!r.answered)document.querySelectorAll('.opt').forEach(b=>b.onclick=()=>{it.user=+b.dataset.i;it.ok=it.user===it.correct;bump(it.cat,it.ok);r.answered=true;renderMC(it)});
+  else{$('#next').focus();$('#next').onclick=next}
+}
+function next(){const r=S.round;r.idx++;r.answered=false;r.peek=false;r.shown=0;r.open=new Set();render()}
+
+/* ---------- Taschenrechner ---------- */
+const KEYS=[['7'],['8'],['9'],['÷','op'],['(','op'],[')','op'],['4'],['5'],['6'],['·','op'],['x²','op','²'],['√','op'],['1'],['2'],['3'],['−','op','-'],['^','op'],['π','op'],['0'],[','],['⌫','op','BS'],['+','op'],['C','op','CLR'],['=','eq','EQ']];
+function renderCalcPad(it){
+  const c=S.calc;
+  $('#calcSlot').innerHTML=`<details class="calc" id="calc" ${c.open?'open':''}><summary>Taschenrechner</summary><div class="calc-body">
+   <div class="cdisp"><input id="cx" aria-label="Rechenausdruck" placeholder="z. B. π/4 · 8,2² · 8,6" value="${esc(c.expr)}" autocomplete="off"><output id="cr" aria-live="polite"></output></div>
+   <div class="keys">${KEYS.map(k=>`<button class="key ${k[1]||''}" data-k="${k[2]||k[0]}" type="button">${k[0]}</button>`).join('')}</div>
+   <div class="tools">${S.round&&!S.round.answered?'<button class="btn small" id="cuse" type="button">Ergebnis ins Antwortfeld</button>':''}<span class="hint">Tastatur geht auch: * / ^ und „sqrt(…)“, „pi“.</span></div>
+   ${c.hist.length?`<ul class="hist">${c.hist.map((h,i)=>`<li><button type="button" data-h="${i}">${esc(h.e)} = ${f(h.v,6)}</button></li>`).join('')}</ul>`:''}
+  </div></details>`;
+  const cx=$('#cx'),cr=$('#cr');
+  const live=()=>{c.expr=cx.value;const v=evalExpr(cx.value);cr.className='';cr.textContent=cx.value.trim()?(isNaN(v)?'…':'= '+f(v,6)):''};
+  const commit=()=>{const v=evalExpr(cx.value);if(isNaN(v)){cr.className='err';cr.textContent='Ausdruck unvollständig – prüfe Klammern und Zeichen.';return}
+    c.hist.unshift({e:cx.value,v});c.hist=c.hist.slice(0,5);c.expr=f(v,6).replace(/\./g,'');renderCalcPad(it);$('#cx').focus()};
+  live();
+  $('#calc').ontoggle=e=>c.open=e.target.open;
+  cx.oninput=live;cx.onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();commit()}};
+  document.querySelectorAll('.key').forEach(b=>b.onclick=()=>{const k=b.dataset.k;
+    if(k==='EQ')return commit();if(k==='CLR'){cx.value='';live();cx.focus();return}
+    const s=cx.selectionStart??cx.value.length,e2=cx.selectionEnd??s;
+    if(k==='BS'){const a=s===e2?Math.max(0,s-1):s;cx.value=cx.value.slice(0,a)+cx.value.slice(e2);cx.setSelectionRange(a,a)}
+    else{const ins=k==='√'?'√(':k;cx.value=cx.value.slice(0,s)+ins+cx.value.slice(e2);cx.setSelectionRange(s+ins.length,s+ins.length)}
+    live();cx.focus()});
+  document.querySelectorAll('[data-h]').forEach(b=>b.onclick=()=>{const h=c.hist[+b.dataset.h];const s=cx.selectionStart??cx.value.length;const ins=f(h.v,6).replace(/\./g,'');cx.value=cx.value.slice(0,s)+ins+cx.value.slice(s);live();cx.focus()});
+  if($('#cuse'))$('#cuse').onclick=()=>{const v=evalExpr(cx.value);const a=$('#ans');if(isNaN(v)||!a)return;a.value=f(v,4).replace(/\./g,'');it.draft=a.value;a.focus()};
+}
+
+/* ---------- Auswertung ---------- */
+function renderEnd(){
+  const r=S.round,ok=r.items.filter(i=>i.ok).length,miss=r.items.filter(i=>!i.ok);
+  const cats=[...Object.keys(CATS),'mat'].filter(k=>S.stats[k]&&S.stats[k].t);
+  const label={calc:'Rechnen',mc:'Formel-Quiz',mat:'Meine Unterlagen'}[r.mode];
+  $('#stage').innerHTML=`<article class="card">
+   <div class="qhead"><h2 style="font-size:28px;text-transform:uppercase">Auswertung</h2><span class="tag">${label}</span></div>${bar()}
+   <div class="score">${ok}<small> / ${r.items.length} richtig</small></div>
+   ${miss.length?`<div><div class="lbl" style="margin-bottom:6px">Nochmal anschauen</div><ul class="misses">${miss.map(it=>it.kind==='calc'
+     ?`<li><strong>${it.fname}</strong> · ${it.ges}: <span class="ans">${fx(it.ans,it.dec)} ${it.unit}</span>${it.user?` <span style="color:var(--muted)">(deins: ${esc(it.user)})</span>`:''}${it.formel?`<br><span class="ans">${it.formel}</span>`:''}</li>`
+     :`<li><strong>${it.frage}</strong><br><span class="ans">${it.opts[it.correct]}</span></li>`).join('')}</ul></div>`:'<p class="situ">Alles richtig. Mach die Runde länger oder nimm ein neues Thema dazu.</p>'}
+   <div class="tools">${miss.length?'<button class="btn" id="retry">Fehler wiederholen</button>':''}<button class="btn ${miss.length?'ghost':''}" id="again">${r.mode==='mat'?'Neue Aufgaben aus Unterlagen':'Neue Runde'}</button></div>
+   ${cats.length?`<div style="display:flex;flex-direction:column;gap:8px"><div class="lbl">Trefferquote gesamt</div>${cats.map(k=>{const s=S.stats[k],p=Math.round(s.r/s.t*100);return`<div class="stat"><span>${catName(k)}</span><div class="track"><div class="fill" style="width:${p}%"></div></div><span class="num">${p} % · ${s.t}</span></div>`}).join('')}
+   <div><button class="linkbtn" id="reset">Statistik zurücksetzen</button></div></div>`:''}
+  </article>`;
+  if(miss.length)$('#retry').onclick=()=>startRound(r.mode,shuffle(miss).map(it=>({...it,user:undefined,ok:undefined,draft:''})));
+  $('#again').onclick=()=>{if(r.mode==='mat'){S.round=null;render();generate()}else newRound()};
+  const rs=$('#reset');if(rs)rs.onclick=()=>{S.stats={};store.set('fw-stats',{});renderEnd()};
+}
+
+function renderRef(){
+  const q=($('#q')?.value||'').toLowerCase().trim();
+  const hit=x=>!q||(x.name+' '+x.frage+' '+x.legende+' '+CATS[x.cat].name).toLowerCase().includes(q);
+  const blocks=Object.entries(CATS).map(([k,c])=>{const list=F.filter(x=>x.cat===k&&hit(x));if(!list.length)return'';
+    return`<section><h2>${c.name}</h2><div>${list.map(x=>`<div class="ref-item"><span class="nm">${x.name}</span><span class="fm">${x.formel}</span><span class="lg">${x.legende}</span></div>`).join('')}</div></section>`}).join('');
+  $('#stage').innerHTML=`<div class="card ref">${blocks||'<p class="situ">Keine Formel gefunden. Versuch einen anderen Begriff.</p>'}</div>`;
+}
+
+/* ---------- Tastatur, Modus, Start ---------- */
+document.querySelectorAll('.modes button').forEach(b=>b.onclick=()=>{S.mode=b.dataset.mode;render()});
+document.addEventListener('keydown',e=>{
+  const r=S.round;if(!r||r.answered||r.idx>=r.items.length||r.mode!==S.mode)return;
+  const it=r.items[r.idx];if(it.kind!=='mc'||/INPUT|TEXTAREA|SELECT/.test(document.activeElement?.tagName||''))return;
+  const m={'1':0,'2':1,'3':2,'4':3,a:0,b:1,c:2,d:3}[e.key.toLowerCase()];
+  if(m!==undefined){const b=document.querySelectorAll('.opt')[m];if(b)b.click()}
+});
+const savedCats=store.get('fw-cats',null);if(Array.isArray(savedCats)){const ok=savedCats.filter(k=>CATS[k]);if(ok.length)S.cats=new Set(ok)}
+S.len=store.get('fw-len',10);
+/* ---------- Claude-Zugang über die Anthropic-API ---------- */
+const API_MODEL='claude-sonnet-5-5';
+S.apiKey=store.get('fw-key','');
+IMG_LIMIT={maxCount:10};
+function shrinkImage(file){return new Promise((res,rej)=>{const url=URL.createObjectURL(file);const im=new Image();
+  im.onload=()=>{const k=Math.min(1,1568/Math.max(im.width,im.height));const c=document.createElement('canvas');c.width=Math.round(im.width*k);c.height=Math.round(im.height*k);
+    c.getContext('2d').drawImage(im,0,0,c.width,c.height);URL.revokeObjectURL(url);res(c.toDataURL('image/jpeg',0.85).split(',')[1])};
+  im.onerror=()=>{URL.revokeObjectURL(url);rej({code:'image_rejected'})};im.src=url})}
+function parseJsonLoose(t){
+  try{return JSON.parse(t)}catch(e){}
+  const m=/```(?:json)?\s*([\s\S]*?)```/.exec(t);if(m){try{return JSON.parse(m[1])}catch(e){}}
+  const a=t.search(/[\[{]/),b=Math.max(t.lastIndexOf('}'),t.lastIndexOf(']'));
+  if(a>=0&&b>a){try{return JSON.parse(t.slice(a,b+1))}catch(e){}}
+  throw{code:'invalid_json'};
+}
+const apiClient={async json(prompt,opts={}){
+  const content=[];
+  for(const file of [].concat(opts.images||[]))content.push({type:'image',source:{type:'base64',media_type:'image/jpeg',data:await shrinkImage(file)}});
+  content.push({type:'text',text:prompt});
+  let r;
+  try{r=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',signal:opts.signal,
+    headers:{'content-type':'application/json','x-api-key':S.apiKey,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+    body:JSON.stringify({model:API_MODEL,max_tokens:16000,messages:[{role:'user',content}]})})}
+  catch(e){throw{code:e?.name==='AbortError'?'cancelled':'offline'}}
+  let data=null;try{data=await r.json()}catch(e){}
+  if(!r.ok){const msg=String(data?.error?.message||'');
+    if(r.status===401||r.status===403)throw{code:'bad_key'};
+    if(r.status===429)throw{code:'rate_limited'};
+    if(r.status===400&&/credit|balance|billing/i.test(msg))throw{code:'no_credit'};
+    if(r.status===400&&/too long|too large|maximum/i.test(msg))throw{code:'prompt_too_large'};
+    if(r.status===400&&/image/i.test(msg))throw{code:'image_rejected'};
+    throw{code:'upstream_error'}}
+  if(data?.stop_reason==='max_tokens')throw{code:'invalid_json'};
+  const text=(data?.content||[]).filter(b=>b.type==='text').map(b=>b.text).join('');
+  if(data?.stop_reason==='refusal'||!text.trim())throw{code:'refused'};
+  return parseJsonLoose(text);
+}};
+Object.assign(ERR,{bad_key:'Der API-Schlüssel wurde abgelehnt. Prüfe, ob du ihn vollständig kopiert hast.',
+  no_credit:'Dein Anthropic-API-Konto hat kein Guthaben. Lade unter console.anthropic.com Guthaben auf.',
+  offline:'Keine Verbindung. Für die Erstellung aus Unterlagen braucht das iPhone Internet.',
+  rate_limited:'Zu viele Anfragen in kurzer Zeit. Warte eine Minute und versuch es nochmal.'});
+function setKey(k){S.apiKey=k;store.set('fw-key',k);SAMPLE=k?apiClient:null}
+setKey(S.apiKey);
+function keyHtml(){
+  return`<details class="paste" ${S.apiKey?'':'open'}><summary>Claude-Zugang ${S.apiKey?'· eingerichtet ✓':'· noch einrichten'}</summary>
+   <p class="hint">Die Aufgaben-Erstellung fragt Claude über die Anthropic-API. Den Schlüssel legst du unter <strong>console.anthropic.com</strong> → API Keys an. Abgerechnet wird über dein API-Guthaben dort, nicht über dein Claude-Abo. Der Schlüssel bleibt nur auf diesem iPhone. Alle anderen Funktionen der App laufen ohne Schlüssel und offline.</p>
+   <input class="field" id="akey" type="password" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="${S.apiKey?'Neuen Schlüssel einfügen, um ihn zu ersetzen':'sk-ant-…'}">
+   <div class="tools"><button class="btn small" id="asave" type="button">Schlüssel speichern</button>${S.apiKey?'<button class="linkbtn" id="adel" type="button">Schlüssel entfernen</button>':''}</div></details>`;
+}
+function bindKey(){
+  const sv=$('#asave');if(sv)sv.onclick=()=>{const k=$('#akey').value.trim();if(!k)return;setKey(k);S.matMsg={t:'Schlüssel gespeichert. Du kannst jetzt Aufgaben erstellen.'};renderMatSetup()};
+  const dl=$('#adel');if(dl)dl.onclick=()=>{setKey('');S.matMsg={t:'Schlüssel entfernt.'};renderMatSetup()};
+}
+render();
+</script>
+
+</body>
+</html>

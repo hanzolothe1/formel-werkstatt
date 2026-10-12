@@ -1,0 +1,65 @@
+# GitHub Actions · ios-app.yml · baut Formel-Werkstatt.ipa (unsigniert) auf einem Mac in der Cloud
+# Die IPA wird beim Installieren mit AltStore mit deiner Apple-ID signiert.
+name: iPhone-App bauen
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+
+jobs:
+  build:
+    runs-on: macos-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Pakete installieren
+        run: npm install --no-audit --no-fund
+
+      - name: App-Inhalt bauen
+        run: npm run build
+
+      - name: iOS-Projekt erzeugen
+        run: npx cap add ios
+
+      - name: App-Icon und Startbild erzeugen
+        run: npx capacitor-assets generate --ios --iconBackgroundColor '#F2B705' --splashBackgroundColor '#EDF0F3' --splashBackgroundColorDark '#10151B'
+
+      - name: Inhalt ins iOS-Projekt kopieren
+        run: npx cap sync ios
+
+      - name: Info.plist anpassen
+        run: |
+          PL=ios/App/App/Info.plist
+          pb() { /usr/libexec/PlistBuddy -c "Set :$1 $3" "$PL" 2>/dev/null || /usr/libexec/PlistBuddy -c "Add :$1 $2 $3" "$PL"; }
+          pb CFBundleDisplayName string "Formel-Werkstatt"
+          pb NSCameraUsageDescription string "\"Fotos von Unterlagen aufnehmen, aus denen Aufgaben erstellt werden.\""
+          pb NSPhotoLibraryUsageDescription string "\"Fotos von Unterlagen auswählen, aus denen Aufgaben erstellt werden.\""
+          pb ITSAppUsesNonExemptEncryption bool false
+          /usr/libexec/PlistBuddy -c "Print" "$PL"
+
+      - name: App kompilieren (ohne Signatur)
+        run: |
+          cd ios/App
+          if [ -d App.xcworkspace ]; then TARGET=(-workspace App.xcworkspace); else TARGET=(-project App.xcodeproj); fi
+          xcodebuild "${TARGET[@]}" -list
+          xcodebuild "${TARGET[@]}" -scheme App -configuration Release \
+            -sdk iphoneos -destination 'generic/platform=iOS' \
+            -derivedDataPath build \
+            CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY="" \
+            build
+          mkdir -p Payload
+          cp -R build/Build/Products/Release-iphoneos/App.app Payload/
+          zip -qry "$GITHUB_WORKSPACE/Formel-Werkstatt.ipa" Payload
+          ls -lh "$GITHUB_WORKSPACE/Formel-Werkstatt.ipa"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Formel-Werkstatt-iPhone-App
+          path: Formel-Werkstatt.ipa
+          retention-days: 30

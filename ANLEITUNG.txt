@@ -1,0 +1,105 @@
+FORMEL-WERKSTATT AUFS IPHONE BRINGEN
+====================================
+Ohne Mac, ohne Kosten. Dauer beim ersten Mal: etwa 45 Minuten.
+Danach läuft die App wie jede andere App auf deinem iPhone.
+
+Was du brauchst:
+- diesen Ordner (Formel-Werkstatt-iPhone) auf dem Laptop
+- deine Apple-ID (die vom iPhone)
+- ein Lightning-/USB-C-Kabel fürs iPhone
+- Laptop und iPhone im selben WLAN
+
+
+TEIL A – Die App in der Cloud bauen lassen (GitHub)
+---------------------------------------------------
+1. Geh auf github.com und leg ein kostenloses Konto an.
+
+2. Oben rechts auf "+" → "New repository".
+   - Repository name: formel-werkstatt
+   - "Private" auswählen
+   - Rest so lassen → "Create repository".
+
+3. Auf der neuen Seite auf "uploading an existing file" klicken.
+   Öffne diesen Ordner im Explorer, markiere ALLES darin
+   (Strg + A, auch den Ordner ".github") und zieh es ins Browserfenster.
+   Unten auf "Commit changes" klicken.
+
+4. Kontrolle: In der Dateiliste muss der Ordner ".github" auftauchen.
+   Fehlt er, dann:
+   - "Add file" → "Create new file"
+   - Als Namen genau eintippen: .github/workflows/ios-app.yml
+   - Den Inhalt der Datei "workflow-kopie.txt" aus diesem Ordner
+     hineinkopieren → "Commit changes".
+
+5. Oben auf den Reiter "Actions" klicken.
+   Der Build läuft bereits von allein – das Hochladen hat ihn gestartet.
+   Du musst nichts drücken. (Nur falls gefragt wird:
+   "I understand my workflows, go ahead and enable them" bestätigen und
+   dann links "iPhone-App bauen" → rechts "Run workflow" → grüner Knopf.)
+
+6. Warten (ca. 10–15 Minuten), bis ein grüner Haken erscheint.
+   Auf den Lauf klicken → ganz unten bei "Artifacts" die Datei
+   "Formel-Werkstatt-iPhone-App" herunterladen.
+   Die ZIP entpacken → darin liegt "Formel-Werkstatt.ipa". Das ist die App.
+
+   Roter Kreuz statt Haken? Auf den Lauf klicken, den roten Schritt
+   aufklappen und mir den Fehlertext schicken.
+
+
+TEIL B – AltStore auf Laptop und iPhone einrichten (einmalig)
+------------------------------------------------------------
+Offizielle Anleitung mit Bildern: faq.altstore.io → AltStore Classic → How to Install (Windows)
+
+1. iTunes und iCloud für Windows installieren – direkt von apple.com,
+   NICHT aus dem Microsoft Store.
+2. AltServer für Windows von altstore.io herunterladen, entpacken, Setup.exe starten.
+3. Im Startmenü "AltServer" suchen → Rechtsklick → "Als Administrator ausführen".
+4. iPhone per Kabel anschließen, entsperren, "Diesem Computer vertrauen".
+5. iTunes öffnen, mit deiner Apple-ID anmelden,
+   beim iPhone "Mit diesem iPhone über WLAN synchronisieren" einschalten.
+6. Unten rechts in der Taskleiste aufs AltServer-Symbol →
+   "Install AltStore" → dein iPhone wählen → Apple-ID und Passwort eingeben.
+   (Die Daten gehen laut AltStore nur an Apple.)
+7. Am iPhone: Einstellungen → Allgemein → VPN & Geräteverwaltung →
+   deine Apple-ID antippen → "Vertrauen".
+8. Am iPhone: Einstellungen → Datenschutz & Sicherheit → Entwicklermodus → an.
+   Das iPhone startet neu, danach "Aktivieren" bestätigen.
+
+
+TEIL C – Formel-Werkstatt installieren
+--------------------------------------
+1. Die Datei "Formel-Werkstatt.ipa" aufs iPhone bringen, z. B.:
+   - in den iCloud-Drive-Ordner auf dem Laptop legen, oder
+   - per Mail an dich selbst schicken und am iPhone in "Dateien" sichern.
+2. Am iPhone AltStore öffnen → unten "My Apps" → oben links "+".
+3. Die Datei "Formel-Werkstatt.ipa" auswählen.
+4. Fertig – das gelbe ƒx-Symbol liegt auf dem Home-Bildschirm.
+
+
+WICHTIG ZUM WEITERBETRIEB
+-------------------------
+- Mit kostenloser Apple-ID läuft die App 7 Tage. AltStore verlängert sie
+  automatisch, wenn AltServer auf dem Laptop läuft und beide im selben WLAN
+  sind. Sonst in AltStore unter "My Apps" auf "Refresh All" tippen.
+- Kostenlose Apple-ID: höchstens 3 solcher Apps gleichzeitig (AltStore zählt mit).
+- Deine Statistik und Unterlagen bleiben beim Verlängern erhalten.
+
+
+AUFGABEN AUS UNTERLAGEN IN DER APP
+----------------------------------
+Rechnen, Anleitung, Taschenrechner, Quiz und Formelsammlung laufen offline,
+ohne Konto und ohne Kosten.
+
+Nur "Aufgaben aus Unterlagen erstellen" braucht Claude. In der App läuft das
+über einen eigenen Anthropic-API-Schlüssel (nicht über dein Claude-Abo):
+1. Auf console.anthropic.com anmelden, Guthaben aufladen.
+2. "API Keys" → "Create Key" → Schlüssel kopieren.
+3. In der App: Meine Unterlagen → "Claude-Zugang" → einfügen → speichern.
+Jede Erstellung kostet etwas API-Guthaben. Den Schlüssel niemandem zeigen.
+
+
+SPÄTER: DAUERHAFT OHNE 7-TAGE-LIMIT
+----------------------------------
+Mit einem Apple-Entwickler-Konto (99 € pro Jahr) kann die App per TestFlight
+installiert werden und muss nicht mehr wöchentlich verlängert werden.
+Den Build dafür kann Claude dir umbauen.

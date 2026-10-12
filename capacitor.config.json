@@ -1,0 +1,9 @@
+{
+  "appId": "de.formelwerkstatt.app",
+  "appName": "Formel-Werkstatt",
+  "webDir": "www",
+  "ios": {
+    "contentInset": "never",
+    "backgroundColor": "#EDF0F3"
+  }
+}
