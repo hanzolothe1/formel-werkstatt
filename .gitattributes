@@ -1,0 +1,5 @@
+# Erzwingt LF im Repository. Sonst landen Windows-Zeilenenden (CRLF) in der
+# Workflow-Datei und die Bash-Schritte auf dem Cloud-Mac brechen ab mit
+# "$'\r': command not found".
+* text=auto eol=lf
+*.png binary
